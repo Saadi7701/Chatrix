@@ -45,7 +45,7 @@ const StoriesPage = () => {
       fetchStories();
       if (selectedStory?.id === storyId) {
         // Optimistically update selected story likes if needed, but fetchStories is safer
-        const res = await axios.get('http://localhost:5000/api/stories', {
+        const res = await axios.get(`${API_URL}/api/stories`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         const updated = res.data.find((s: any) => s.id === storyId);
