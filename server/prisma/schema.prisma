@@ -1,0 +1,225 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  username      String    @unique
+  fullName      String?
+  userCode      String    @unique // Unique futuristic handle: e.g. alpha_x
+  password      String
+  profilePic    String?
+  bannerPic     String?
+  bio           String?
+  university    String?
+  socialLinks   Json?     // { twitter: "", github: "" }
+  isOnline      Boolean   @default(false)
+  lastSeen      DateTime  @default(now())
+  stealthCode   String?   @default("AURA_99")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Messaging
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  
+  // Groups
+  groups        GroupMember[]
+  adminGroups   Group[]       @relation("GroupAdmin")
+
+  // Social
+  followers     Follow[] @relation("Following")
+  following     Follow[] @relation("Follower")
+  
+  // Stories
+  stories       Story[]
+
+  // AI Assistant
+  aiAssistant   AIAssistant?
+  
+  // Security/Auth
+  otp           String?
+  otpExpires    DateTime?
+  isVerified    Boolean   @default(false)
+  sessions      Session[]
+
+  @@index([userCode])
+}
+
+model Message {
+  id          String   @id @default(uuid())
+  content     String?
+  type        MessageType @default(TEXT) // TEXT, IMAGE, VIDEO, AUDIO, DOCUMENT
+  fileUrl     String?
+  fileName    String?
+  fileSize    Int?
+  
+  status      MessageStatus @default(SENT) // SENT, DELIVERED, SEEN
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  senderId    String
+  sender      User     @relation("SentMessages", fields: [senderId], references: [id])
+  
+  receiverId  String?  // Nullable for group messages
+  receiver    User?    @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  
+  groupId     String?
+  group       Group?   @relation(fields: [groupId], references: [id])
+
+  // Reply/Forward
+  replyToId   String?
+  replyTo     Message? @relation("MessageReplies", fields: [replyToId], references: [id])
+  replies     Message[] @relation("MessageReplies")
+
+  reactions   Reaction[]
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VIDEO
+  AUDIO
+  DOCUMENT
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  SEEN
+}
+
+model Group {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  icon        String?
+  
+  adminId     String
+  admin       User     @relation("GroupAdmin", fields: [adminId], references: [id])
+  
+  members     GroupMember[]
+  messages    Message[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model GroupMember {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  groupId   String
+  group     Group    @relation(fields: [groupId], references: [id])
+  role      GroupRole @default(MEMBER)
+  joinedAt  DateTime @default(now())
+
+  @@unique([userId, groupId])
+}
+
+enum GroupRole {
+  ADMIN
+  MEMBER
+}
+
+model Story {
+  id          String   @id @default(uuid())
+  mediaUrl    String
+  mediaType   String   // image, video
+  caption     String?
+  duration    Int      @default(5) // in seconds
+  
+  expiresAt   DateTime // 24 hours from creation
+  createdAt   DateTime @default(now())
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  
+  views       StoryView[]
+  likes       StoryLike[]
+}
+
+model StoryView {
+  id        String   @id @default(uuid())
+  storyId   String
+  story     Story    @relation(fields: [storyId], references: [id])
+  userId    String
+  viewedAt  DateTime @default(now())
+}
+
+model StoryLike {
+  id        String   @id @default(uuid())
+  storyId   String
+  story     Story    @relation(fields: [storyId], references: [id])
+  userId    String
+}
+
+model Follow {
+  id          String   @id @default(uuid())
+  followerId  String
+  follower    User     @relation("Follower", fields: [followerId], references: [id])
+  followingId String
+  following   User     @relation("Following", fields: [followingId], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+}
+
+model AIAssistant {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+  
+  name        String   @default("Aura")
+  personality String?  // AI traits
+  autoReply   Boolean  @default(false)
+  
+  memory      Json?    // Context history
+  docs        AIDocument[]
+  commands    AICommand[]
+}
+
+model AIDocument {
+  id            String   @id @default(uuid())
+  assistantId   String
+  assistant     AIAssistant @relation(fields: [assistantId], references: [id])
+  fileName      String
+  fileUrl       String
+  content       String?  @db.Text // Extracted text for RAG
+  vectorId      String?  // Reference to Pinecone/Vector DB
+}
+
+model AICommand {
+  id            String   @id @default(uuid())
+  assistantId   String
+  assistant     AIAssistant @relation(fields: [assistantId], references: [id])
+  trigger       String
+  action        String
+}
+
+model Session {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  token       String   @unique
+  deviceInfo  String?
+  expiresAt   DateTime
+}
+
+model Reaction {
+  id        String   @id @default(uuid())
+  emoji     String
+  messageId String
+  message   Message @relation(fields: [messageId], references: [id])
+  userId    String
+}
