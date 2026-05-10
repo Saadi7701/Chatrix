@@ -35,6 +35,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Routes
+app.get('/', (req, res) => {
+  res.status(200).send('API is running perfectly! Database connection may be pending.');
+});
 app.use('/api/auth', authRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/stories', storyRoutes);
