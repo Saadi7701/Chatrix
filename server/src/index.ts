@@ -19,14 +19,26 @@ const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 
 const io = new Server(httpServer, {
   cors: {
-    origin: CLIENT_URL,
+    origin: [
+      CLIENT_URL,
+      'https://chatrix-nrg5.vercel.app',
+      'https://chatrix.vercel.app',
+      'http://localhost:5173'
+    ],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
   }
 });
 
+app.set('trust proxy', 1);
+
 app.use(cors({
-  origin: CLIENT_URL,
+  origin: [
+    CLIENT_URL,
+    'https://chatrix-nrg5.vercel.app',
+    'https://chatrix.vercel.app',
+    'http://localhost:5173'
+  ],
   credentials: true
 }));
 
