@@ -6,9 +6,9 @@ import dotenv from 'dotenv';
 import path from 'path';
 import authRoutes from './routes/auth';
 import chatRoutes from './routes/chat';
-import storyRoutes from './routes/stories';
+import storyRoutes from './routes/story';
 import uploadRoutes from './routes/upload';
-import { handleSocket } from './socket/socket.handler';
+import { setupSocket } from './socket/socket.handler';
 
 dotenv.config();
 
@@ -41,7 +41,7 @@ app.use('/api/stories', storyRoutes);
 app.use('/api/upload', uploadRoutes);
 
 // Socket Handler
-handleSocket(io);
+setupSocket(io);
 
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => {

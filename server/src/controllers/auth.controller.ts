@@ -72,7 +72,7 @@ export const login = async (req: Request, res: Response) => {
 };
 
 export const searchUser = async (req: Request, res: Response) => {
-  const { code } = req.params;
+  const code = req.params.code as string;
   try {
     const user = await prisma.user.findUnique({
       where: { userCode: code },
@@ -98,7 +98,7 @@ export const searchUser = async (req: Request, res: Response) => {
 };
 
 export const getConversation = async (req: Request, res: Response) => {
-  const { otherUserId } = req.params;
+  const otherUserId = req.params.otherUserId as string;
   const userId = (req as any).userId;
 
   try {
@@ -230,7 +230,7 @@ export const sendMessage = async (req: Request, res: Response) => {
 
 export const checkUserCode = async (req: Request, res: Response) => {
   try {
-    const { code } = req.params;
+    const code = req.params.code as string;
     const user = await prisma.user.findUnique({
       where: { userCode: code }
     });

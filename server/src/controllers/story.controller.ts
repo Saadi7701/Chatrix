@@ -42,7 +42,7 @@ export const getStories = async (req: Request, res: Response) => {
 };
 
 export const likeStory = async (req: Request, res: Response) => {
-  const { storyId } = req.params;
+  const storyId = req.params.storyId as string;
   const userId = (req as any).userId;
 
   try {
