@@ -58,7 +58,7 @@ app.use('/api/upload', uploadRoutes);
 // Socket Handler
 setupSocket(io);
 
-const PORT = process.env.PORT || 5000;
-httpServer.listen(PORT as number, '0.0.0.0', () => {
-  console.log(`[server]: Futuristic AI Chat Server is running at http://localhost:${PORT}`);
+const PORT = parseInt(process.env.PORT || '5000', 10);
+httpServer.listen(PORT, '0.0.0.0', () => {
+  console.log(`[server]: Futuristic AI Chat Server is running at port ${PORT}`);
 });
