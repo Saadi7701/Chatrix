@@ -9,6 +9,7 @@ import chatRoutes from './routes/chat';
 import storyRoutes from './routes/story';
 import uploadRoutes from './routes/upload';
 import { setupSocket } from './socket/socket.handler';
+import prisma from './config/prisma';
 
 dotenv.config();
 
@@ -59,6 +60,16 @@ app.use('/api/upload', uploadRoutes);
 setupSocket(io);
 
 const PORT = parseInt(process.env.PORT || '5000', 10);
-httpServer.listen(PORT, '0.0.0.0', () => {
-  console.log(`[server]: Futuristic AI Chat Server is running at port ${PORT}`);
-});
+
+// Test database connection before starting
+prisma.$connect()
+  .then(() => {
+    console.log('✅ Database connected successfully!');
+    httpServer.listen(PORT, '0.0.0.0', () => {
+      console.log(`[server]: Futuristic AI Chat Server is running at port ${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error('❌ FATAL: Database connection failed on startup!', error);
+    process.exit(1);
+  });
