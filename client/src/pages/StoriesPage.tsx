@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, Send, Heart, RefreshCcw, Share2, 
-  ChevronLeft, ChevronRight, Zap, Plus, Image as ImageIcon,
-  Loader2, Trash2
+  Zap, Plus, Image as ImageIcon,
+  Loader2
 } from 'lucide-react';
 import axios from 'axios';
 import DashboardLayout from '../components/DashboardLayout';

@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, Edit3, Video, Phone, MoreVertical, 
-  Send, Plus, Shield, Sparkles, Clock, Cpu,
-  ChevronRight, CheckCheck, Terminal, AlertCircle,
-  Image as ImageIcon, Mic, Paperclip, Camera, EyeOff,
+  Send, Shield, Sparkles, Cpu,
+  CheckCheck,
+  Mic, Paperclip, Camera, EyeOff,
   Square, Play, Pause, Trash2, ArrowLeft, X
 } from 'lucide-react';
 import axios from 'axios';
@@ -23,7 +23,7 @@ const ChatPage = () => {
   } = useChatStore();
   
   const [searchCode, setSearchCode] = useState('');
-  const [searchError, setSearchError] = useState('');
+  // const [searchError, setSearchError] = useState('');
   const [inputText, setInputText] = useState('');
   const [contacts, setContacts] = useState<any[]>([]);
   const [systemMsg, setSystemMsg] = useState('');
@@ -117,14 +117,14 @@ const ChatPage = () => {
     }
 
     try {
-      setSearchError('');
+      // setSearchError('');
       const res = await axios.get(`${API_URL}/api/auth/search/${searchCode}`);
       setActiveConversation(res.data);
       if (!contacts.find(c => c.id === res.data.id)) setContacts([res.data, ...contacts]);
       setSearchCode('');
       setIsStealth(false);
     } catch (err) {
-      setSearchError('Node not found.');
+      // setSearchError('Node not found.');
     }
   };
 

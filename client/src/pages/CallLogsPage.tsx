@@ -1,6 +1,6 @@
-import React from 'react';
+
 import DashboardLayout from '../components/DashboardLayout';
-import { PhoneIncoming, PhoneOutgoing, Video, Phone, MoreVertical, Search, Zap, Clock } from 'lucide-react';
+import { PhoneIncoming, PhoneOutgoing, Video, Phone, Search, Zap, Clock } from 'lucide-react';
 
 const CallLogsPage = () => {
   const calls = [

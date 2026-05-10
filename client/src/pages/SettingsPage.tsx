@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
-import { User, Bell, Shield, Cpu, Zap, Camera, Loader2, Check } from 'lucide-react';
+import { User, Bell, Shield, Cpu, Camera, Loader2, Check } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 import axios from 'axios';
 import { API_URL } from '../config/api';
@@ -92,7 +92,7 @@ const SettingsPage = () => {
                               const res = await axios.put(`${API_URL}/api/auth/profile`, { username, fullName }, {
                                  headers: { Authorization: `Bearer ${token}` }
                               });
-                              setAuth(res.data, token);
+                              if (token) setAuth(res.data, token);
                               alert('Neural Profile Synced');
                            } catch (err) { alert('Update Failed: Identity Conflict?'); }
                         }}
@@ -129,7 +129,7 @@ const SettingsPage = () => {
                                   const res = await axios.put(`${API_URL}/api/auth/stealth-code`, { code }, {
                                      headers: { Authorization: `Bearer ${token}` }
                                   });
-                                  setAuth(res.data, token);
+                                  if (token) setAuth(res.data, token);
                                   alert('Neural Privacy Updated');
                                } catch (err) { alert('Sync Failed'); }
                             }}

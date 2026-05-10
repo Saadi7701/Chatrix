@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   MessageSquare, Users, Phone, Settings, 
-  LogOut, Zap, Info, Menu, X, Shield
+  LogOut, Zap, Info, Menu, X
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
