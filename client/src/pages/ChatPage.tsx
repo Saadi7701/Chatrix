@@ -35,9 +35,11 @@ const ChatPage = () => {
   const [recordingTime, setRecordingTime] = useState(0);
   const [recordedAudio, setRecordedAudio] = useState<Blob | null>(null);
   const [audioPreviewUrl, setAudioPreviewUrl] = useState<string | null>(null);
+  const [isSendingVoice, setIsSendingVoice] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingIntervalRef = useRef<any>(null);
+  const recordedAudioRef = useRef<Blob | null>(null);
 
   const socketRef = useRef<Socket | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -156,29 +158,39 @@ const ChatPage = () => {
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      // Pick best supported mime type (webm for Chrome, mp4 for Safari/iOS)
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : MediaRecorder.isTypeSupported('audio/webm')
+        ? 'audio/webm'
+        : MediaRecorder.isTypeSupported('audio/mp4')
+        ? 'audio/mp4'
+        : 'audio/ogg';
+
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
 
       mediaRecorder.ondataavailable = (event) => {
-        audioChunksRef.current.push(event.data);
+        if (event.data.size > 0) audioChunksRef.current.push(event.data);
       };
 
       mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+        recordedAudioRef.current = audioBlob; // store in ref for instant access
         setRecordedAudio(audioBlob);
         setAudioPreviewUrl(URL.createObjectURL(audioBlob));
         stream.getTracks().forEach(track => track.stop());
       };
 
-      mediaRecorder.start();
+      mediaRecorder.start(100); // collect data every 100ms
       setIsRecording(true);
       setRecordingTime(0);
       recordingIntervalRef.current = setInterval(() => {
         setRecordingTime(prev => prev + 1);
       }, 1000);
     } catch (err) {
-      alert('Neural mic access denied.');
+      alert('Microphone access denied. Please allow mic permissions.');
     }
   };
 
@@ -189,9 +201,17 @@ const ChatPage = () => {
   };
 
   const sendVoiceMessage = async () => {
-    if (!recordedAudio || !activeConversation || !token) return;
+    const blob = recordedAudioRef.current || recordedAudio;
+    if (!blob || !activeConversation || !token || !socketRef.current) {
+      setSystemMsg('Voice send failed: not ready.');
+      setTimeout(() => setSystemMsg(''), 3000);
+      return;
+    }
 
-    const file = new File([recordedAudio], 'voice_note.webm', { type: 'audio/webm' });
+    setIsSendingVoice(true);
+    const mimeType = blob.type || 'audio/webm';
+    const ext = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm';
+    const file = new File([blob], `voice_note.${ext}`, { type: mimeType });
     const formData = new FormData();
     formData.append('file', file);
 
@@ -200,7 +220,7 @@ const ChatPage = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      socketRef.current?.emit('send_message', {
+      socketRef.current.emit('send_message', {
         receiverId: activeConversation.id,
         content: res.data.url,
         senderId: user?.id,
@@ -208,7 +228,13 @@ const ChatPage = () => {
       });
       
       clearVoicePreview();
-    } catch (err) { console.error('Voice upload failed', err); }
+    } catch (err) {
+      console.error('Voice upload failed', err);
+      setSystemMsg('Voice upload failed. Check your connection.');
+      setTimeout(() => setSystemMsg(''), 4000);
+    } finally {
+      setIsSendingVoice(false);
+    }
   };
 
   const clearVoicePreview = () => {
@@ -429,9 +455,9 @@ const ChatPage = () => {
                          <button onClick={clearVoicePreview} className="p-2 md:p-3 text-gray-500 hover:text-red-500 transition-colors">
                             <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
                          </button>
-                         <button onClick={sendVoiceMessage} className="bg-cyan-400 p-2 md:p-3 rounded-xl shadow-lg hover:scale-105 transition-all">
-                            <Send className="w-4 h-4 md:w-5 md:h-5 text-black" />
-                         </button>
+                         <button onClick={sendVoiceMessage} disabled={isSendingVoice} className="bg-cyan-400 p-2 md:p-3 rounded-xl shadow-lg hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-wait">
+                             {isSendingVoice ? <span className="text-black text-xs font-black px-1">...</span> : <Send className="w-4 h-4 md:w-5 md:h-5 text-black" />}
+                          </button>
                       </div>
                     </div>
                   )}
