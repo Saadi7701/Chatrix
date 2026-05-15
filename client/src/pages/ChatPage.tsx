@@ -566,7 +566,7 @@ const MessageBubble = ({ text, time, own, type, status }: any) => {
     <div className={`flex ${own ? 'justify-end' : 'justify-start'}`}>
       <div className={`
         max-w-[85%] md:max-w-[75%] lg:max-w-[70%] p-4 md:p-5 rounded-[1.5rem] md:rounded-[2rem]
-        ${own ? 'bg-cyan-500/10 text-white border border-cyan-500/20' : 'bg-white/5 text-gray-200 border border-white/5'}
+        ${own ? 'bubble-out' : 'bubble-in'}
         shadow-xl backdrop-blur-sm
       `}>
         {(type === 'TEXT' || !type) && <p className="text-sm md:text-[15px] leading-relaxed mb-1 md:mb-2">{text}</p>}

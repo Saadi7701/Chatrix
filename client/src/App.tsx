@@ -26,7 +26,7 @@ function App() {
         <div className="ambient-glow-2" />
       </div>
 
-      <div className={`relative z-10 min-h-screen ${user?.darkTheme ? 'dark-matter' : ''}`}>
+      <div className={`relative z-10 min-h-screen ${user?.darkTheme === false ? 'light-mode' : ''}`}>
         <Routes>
           <Route path="/" element={token ? <Navigate to="/chat" /> : <LandingPage />} />
           <Route path="/auth" element={token ? <Navigate to="/chat" /> : <AuthPage />} />
