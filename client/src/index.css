@@ -106,18 +106,43 @@ body {
   background: radial-gradient(circle, rgba(188, 19, 254, 0.05) 0%, transparent 70%);
 }
 
-/* Neural Light Mode Overrides */
+/* Neural Light Mode Overrides (Futuristic Aura Gradient) */
 .light-mode {
-  background-color: #f0f2f5 !important;
-  color: #111b21 !important;
+  background: linear-gradient(135deg, #eef2f3 0%, #d5e1df 100%) !important;
+  background-attachment: fixed !important;
+  color: #1e293b !important;
 }
 
-.light-mode .bg-\[\#050505\] {
-  background-color: #f0f2f5 !important;
+.light-mode .bg-\[\#050505\],
+.light-mode .bg-\[\#0b141a\],
+.light-mode .bg-black\/20 {
+  background-color: transparent !important;
 }
 
+/* Glass Panels in Light Mode */
+.light-mode .bg-white\/\[0\.02\],
+.light-mode .bg-white\/\[0\.03\],
+.light-mode .bg-white\/5,
 .light-mode .bg-\[\#111b21\] {
-  background-color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.4) !important;
+  backdrop-filter: blur(25px) !important;
+  border-color: rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05) !important;
+}
+
+.light-mode .text-white,
+.light-mode h1,
+.light-mode h2,
+.light-mode h3,
+.light-mode h4 {
+  color: #0f172a !important;
+}
+
+.light-mode .text-gray-400,
+.light-mode .text-gray-500,
+.light-mode .text-gray-600 {
+  color: #475569 !important;
+  opacity: 0.8;
 }
 
 .light-mode .border-white\/5,
@@ -125,39 +150,31 @@ body {
   border-color: rgba(0, 0, 0, 0.08) !important;
 }
 
-.light-mode .text-white {
-  color: #111b21 !important;
-}
-
-.light-mode .text-gray-400,
-.light-mode .text-gray-500 {
-  color: #667781 !important;
-}
-
-.light-mode .bg-white\/\[0\.02\],
-.light-mode .bg-white\/\[0\.03\],
-.light-mode .bg-white\/5 {
-  background-color: #ffffff !important;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-}
-
 .light-mode .bubble-in {
-  background-color: #ffffff !important;
-  color: #111b21 !important;
-  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  background: rgba(255, 255, 255, 0.8) !important;
+  color: #1e293b !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03) !important;
 }
 
 .light-mode .bubble-out {
-  background-color: #d9fdd3 !important;
-  color: #111b21 !important;
-  border: 1px solid rgba(0, 0, 0, 0.05) !important;
+  background: linear-gradient(135deg, #00f2ff 0%, #00d2ff 100%) !important;
+  color: #000000 !important;
+  border: none !important;
+  box-shadow: 0 4px 15px rgba(0, 242, 255, 0.2) !important;
 }
 
 .light-mode .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #ced0d1;
+  background: #cbd5e1;
 }
 
-.light-mode .bg-black\/20 {
-  background-color: rgba(255, 255, 255, 0.8) !important;
+.light-mode input {
+  background-color: rgba(255, 255, 255, 0.6) !important;
+  color: #0f172a !important;
 }
+
+.light-mode .text-cyan-400 {
+  color: #0891b2 !important;
+}
+
 
