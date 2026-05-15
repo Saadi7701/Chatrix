@@ -67,15 +67,17 @@ setupSocket(io);
 
 const PORT = parseInt(process.env.PORT || '5000', 10);
 
-// Test database connection before starting
-prisma.$connect()
-  .then(() => {
-    console.log('✅ Database connected successfully!');
-    httpServer.listen(PORT, '0.0.0.0', () => {
-      console.log(`[server]: Futuristic AI Chat Server is running at port ${PORT}`);
+// Start listening immediately to pass Railway Health Checks
+httpServer.listen(PORT, '0.0.0.0', () => {
+  console.log(`[server]: Futuristic AI Chat Server is running at port ${PORT}`);
+  
+  // Initialize database in the background
+  prisma.$connect()
+    .then(() => {
+      console.log('✅ Database connected successfully!');
+    })
+    .catch((error) => {
+      console.error('❌ FATAL: Database connection failed!', error);
+      // Don't exit, allow the server to stay up so we can see logs
     });
-  })
-  .catch((error) => {
-    console.error('❌ FATAL: Database connection failed on startup!', error);
-    process.exit(1);
-  });
+});
