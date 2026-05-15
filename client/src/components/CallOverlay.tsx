@@ -167,11 +167,19 @@ const CallOverlay = () => {
          >
             <div className="w-full h-full md:w-[90vw] md:h-[85vh] md:max-w-5xl bg-[#0b141a] md:rounded-[3rem] border-white/10 overflow-hidden relative shadow-2xl flex flex-col">
                
+               {/* Hidden Audio for Voice-Only / Fallback */}
+               <audio ref={remoteVideoRef} autoPlay playsInline className="hidden" />
+
                {/* Video Streams */}
                <div className="flex-1 relative bg-black/20 flex items-center justify-center overflow-hidden">
                   {callType === 'VIDEO' ? (
                      <>
-                        <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
+                        <video 
+                           ref={remoteVideoRef as any} 
+                           autoPlay 
+                           playsInline 
+                           className="w-full h-full object-cover" 
+                        />
                         <video 
                            ref={localVideoRef} 
                            autoPlay 
@@ -191,7 +199,9 @@ const CallOverlay = () => {
                         </div>
                         <div className="space-y-2">
                            <h2 className="text-xl md:text-4xl font-black text-white tracking-tighter uppercase">{remoteUser?.username || 'NEURAL LINK'}</h2>
-                           <p className="text-[10px] md:text-sm font-black text-cyan-400 tracking-[0.4em] uppercase">Active Connection</p>
+                           <p className="text-[10px] md:text-sm font-black text-cyan-400 tracking-[0.4em] uppercase">
+                              {callState === 'ACTIVE' ? 'Link Established' : 'Synchronizing...'}
+                           </p>
                         </div>
                      </div>
                   )}
