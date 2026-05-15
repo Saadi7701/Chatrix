@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Phone, Video, Mic, MicOff, VideoOff, PhoneOff, User } from 'lucide-react';
+import { Phone, Video, Mic, MicOff, VideoOff, PhoneOff, User, Volume2, VolumeX } from 'lucide-react';
 import { socket } from '../services/socket';
 import { useAuthStore } from '../store/useAuthStore';
 
@@ -23,6 +23,8 @@ const CallOverlay = () => {
    const [remoteUser, setRemoteUser] = useState<any>(null);
    const [isMuted, setIsMuted] = useState(false);
    const [isVideoOff, setIsVideoOff] = useState(false);
+   const [isSpeakerOn, setIsSpeakerOn] = useState(true);
+   const [connStatus, setConnStatus] = useState('INITIALIZING...');
 
    const localStreamRef = useRef<MediaStream | null>(null);
    const remoteStreamRef = useRef<MediaStream | null>(null);
@@ -37,13 +39,9 @@ const CallOverlay = () => {
          setCallType(type);
          setCallState('RECEIVING');
          
-         // Play ringing sound logic could go here
-         
-         // Pre-setup peer connection
          const pc = createPeerConnection(from);
          await pc.setRemoteDescription(new RTCSessionDescription(offer));
          
-         // Process any ICE candidates that arrived before the offer was set
          while (pendingIceCandidates.current.length > 0) {
             const candidate = pendingIceCandidates.current.shift();
             if (candidate) await pc.addIceCandidate(new RTCIceCandidate(candidate));
@@ -77,7 +75,11 @@ const CallOverlay = () => {
       };
    }, []);
 
-   const [connStatus, setConnStatus] = useState('INITIALIZING...');
+   useEffect(() => {
+      if (remoteVideoRef.current) {
+         remoteVideoRef.current.volume = isSpeakerOn ? 1.0 : 0.2;
+      }
+   }, [isSpeakerOn]);
 
    const createPeerConnection = (targetUserId: string) => {
       const pc = new RTCPeerConnection(ICE_SERVERS);
@@ -104,7 +106,6 @@ const CallOverlay = () => {
          console.log('Remote track received:', event.track.kind);
          if (remoteVideoRef.current) {
             remoteVideoRef.current.srcObject = event.streams[0];
-            // Force play to bypass browser silence rules
             remoteVideoRef.current.play().catch(err => console.error('Auto-play failed:', err));
          }
          remoteStreamRef.current = event.streams[0];
@@ -178,7 +179,6 @@ const CallOverlay = () => {
       endCallLocal();
    };
 
-   // Expose startCall to window for ChatPage to trigger
    useEffect(() => {
       (window as any).startNeuralCall = startCall;
       return () => { delete (window as any).startNeuralCall; };
@@ -196,7 +196,6 @@ const CallOverlay = () => {
          >
             <div className="w-full h-full md:w-[90vw] md:h-[85vh] md:max-w-5xl bg-[#0b141a] md:rounded-[3rem] border-white/10 overflow-hidden relative shadow-2xl flex flex-col">
                
-               {/* Persistent Media Element for Remote Stream - Keep visible to browser but hidden from user to prevent mobile audio suspension */}
                <video 
                   ref={remoteVideoRef as any} 
                   autoPlay 
@@ -204,7 +203,6 @@ const CallOverlay = () => {
                   className={`absolute inset-0 w-full h-full object-cover z-0 ${callType === 'VOICE' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`} 
                />
 
-               {/* Video Streams / Voice HUD */}
                <div className={`flex-1 relative bg-black/20 flex items-center justify-center overflow-hidden ${callType === 'VIDEO' ? 'absolute inset-0' : ''}`}>
                   {callType === 'VIDEO' ? (
                      <>
@@ -237,7 +235,6 @@ const CallOverlay = () => {
 
                {callState === 'RECEIVING' && (
                   <div className="absolute inset-0 bg-[#050505]/95 backdrop-blur-3xl flex flex-col items-center justify-center z-50 p-6">
-                     {/* Pinging background - must be pointer-events-none */}
                      <div className="w-32 h-32 md:w-48 md:h-48 rounded-full bg-cyan-400 animate-ping absolute opacity-10 pointer-events-none" />
                      
                      <div className="w-24 h-24 md:w-40 md:h-40 rounded-[2rem] md:rounded-[3rem] bg-white/5 border border-white/10 overflow-hidden relative shadow-[0_0_50px_rgba(0,242,255,0.2)] mb-8">
@@ -270,9 +267,7 @@ const CallOverlay = () => {
                   </div>
                )}
 
-               {/* Controls */}
-               <div className="p-6 md:p-10 flex items-center justify-center gap-6 md:gap-12 bg-black/60 border-t border-white/5 pb-12 md:pb-10">
-
+               <div className="p-6 md:p-10 flex items-center justify-center gap-4 md:gap-8 bg-black/60 border-t border-white/5 pb-12 md:pb-10 flex-wrap">
                   <button 
                      onClick={() => {
                         const audioTrack = localStreamRef.current?.getAudioTracks()[0];
@@ -281,9 +276,9 @@ const CallOverlay = () => {
                            setIsMuted(!audioTrack.enabled);
                         }
                      }}
-                     className={`p-4 md:p-6 rounded-3xl transition-all ${isMuted ? 'bg-red-500/20 text-red-500' : 'bg-white/5 text-white hover:bg-white/10'}`}
+                     className={`p-4 md:p-5 rounded-2xl transition-all ${isMuted ? 'bg-red-500/20 text-red-500' : 'bg-white/5 text-white hover:bg-white/10'}`}
                   >
-                     {isMuted ? <MicOff size={28} /> : <Mic size={28} />}
+                     {isMuted ? <MicOff size={24} /> : <Mic size={24} />}
                   </button>
 
                   {callType === 'VIDEO' && (
@@ -295,17 +290,24 @@ const CallOverlay = () => {
                               setIsVideoOff(!videoTrack.enabled);
                            }
                         }}
-                        className={`p-4 md:p-6 rounded-3xl transition-all ${isVideoOff ? 'bg-red-500/20 text-red-500' : 'bg-white/5 text-white hover:bg-white/10'}`}
+                        className={`p-4 md:p-5 rounded-2xl transition-all ${isVideoOff ? 'bg-red-500/20 text-red-500' : 'bg-white/5 text-white hover:bg-white/10'}`}
                      >
-                        {isVideoOff ? <VideoOff size={28} /> : <Video size={28} />}
+                        {isVideoOff ? <VideoOff size={24} /> : <Video size={24} />}
                      </button>
                   )}
 
                   <button 
-                     onClick={endCall}
-                     className="p-6 md:p-8 rounded-[2rem] bg-red-500 text-white shadow-[0_0_30px_rgba(239,68,68,0.4)] hover:scale-110 active:scale-95 transition-all"
+                     onClick={() => setIsSpeakerOn(!isSpeakerOn)}
+                     className={`p-4 md:p-5 rounded-2xl transition-all ${!isSpeakerOn ? 'bg-amber-500/20 text-amber-500' : 'bg-white/5 text-white hover:bg-white/10'}`}
                   >
-                     <PhoneOff size={32} />
+                     {isSpeakerOn ? <Volume2 size={24} /> : <VolumeX size={24} />}
+                  </button>
+
+                  <button 
+                     onClick={endCall}
+                     className="p-5 md:p-6 rounded-2xl bg-red-500 text-white shadow-[0_0_30px_rgba(239,68,68,0.4)] hover:scale-110 active:scale-95 transition-all"
+                  >
+                     <PhoneOff size={28} />
                   </button>
                </div>
             </div>
