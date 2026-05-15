@@ -10,8 +10,8 @@ export const socket = io(SOCKET_URL, {
   reconnectionDelay: 1000,
 });
 
-export const connectSocket = (userId: string) => {
-  socket.auth = { userId };
+export const connectSocket = (userId: string, token: string) => {
+  socket.auth = { userId, token };
   socket.connect();
   socket.emit('join', userId);
 };

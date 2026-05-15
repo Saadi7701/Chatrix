@@ -10,6 +10,8 @@ import { useAuthStore } from './store/useAuthStore';
 import NotificationManager from './components/NotificationManager';
 import CallOverlay from './components/CallOverlay';
 
+import { connectSocket, disconnectSocket } from './services/socket';
+
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const token = useAuthStore((state) => state.token);
   if (!token) return <Navigate to="/auth" />;
@@ -18,6 +20,14 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 function App() {
   const { token, user } = useAuthStore();
+
+  useEffect(() => {
+    if (user?.id && token) {
+      connectSocket(user.id, token);
+    } else {
+      disconnectSocket();
+    }
+  }, [user?.id, token]);
 
   useEffect(() => {
     if (user?.darkTheme === false) {

@@ -8,11 +8,12 @@ import {
   Square, Play, Pause, Trash2, ArrowLeft, X
 } from 'lucide-react';
 import axios from 'axios';
-import { io, Socket } from 'socket.io-client';
+import { socket } from '../services/socket';
+
 import DashboardLayout from '../components/DashboardLayout';
 import { useAuthStore } from '../store/useAuthStore';
 import { useChatStore } from '../store/useChatStore';
-import { API_URL, SOCKET_URL } from '../config/api';
+import { API_URL } from '../config/api';
 
 const ChatPage = () => {
   const { user, token } = useAuthStore();
@@ -23,7 +24,6 @@ const ChatPage = () => {
   } = useChatStore();
   
   const [searchCode, setSearchCode] = useState('');
-  // const [searchError, setSearchError] = useState('');
   const [inputText, setInputText] = useState('');
   const [contacts, setContacts] = useState<any[]>([]);
   const [systemMsg, setSystemMsg] = useState('');
@@ -41,7 +41,6 @@ const ChatPage = () => {
   const recordingIntervalRef = useRef<any>(null);
   const recordedAudioRef = useRef<Blob | null>(null);
 
-  const socketRef = useRef<Socket | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const activeConversationRef = useRef(activeConversation);
@@ -53,47 +52,49 @@ const ChatPage = () => {
   useEffect(() => {
     if (!token) return;
 
-    socketRef.current = io(SOCKET_URL, {
-      auth: { token }
-    });
-
-    socketRef.current.on('connect', () => {
-      if (user?.id) socketRef.current?.emit('join', user.id);
-    });
-
-    socketRef.current.on('receive_message', (message) => {
+    const handleReceiveMessage = (message: any) => {
       const currentChat = activeConversationRef.current;
       if (currentChat?.id === message.senderId || currentChat?.id === message.receiverId) {
         addMessage(message);
         if (currentChat?.id === message.senderId) {
-          socketRef.current?.emit('mark_as_read', { 
+          socket.emit('mark_as_read', { 
             messageId: message.id, 
             senderId: message.senderId,
             receiverId: user?.id 
           });
         }
       }
-    });
+    };
 
-    socketRef.current.on('message_read', ({ messageId }) => {
+    const handleMessageRead = ({ messageId }: any) => {
       updateMessageStatus(messageId, 'SEEN');
-    });
+    };
 
-    socketRef.current.on('message_delivered', ({ messageId }) => {
+    const handleMessageDelivered = ({ messageId }: any) => {
       updateMessageStatus(messageId, 'DELIVERED');
-    });
+    };
 
-    socketRef.current.on('user_status_change', ({ userId, isOnline }) => {
+    const handleUserStatusChange = ({ userId, isOnline }: any) => {
       updateUserStatus(userId, isOnline);
-    });
+    };
 
-    socketRef.current.on('error', ({ message }) => {
+    const handleError = ({ message }: any) => {
       setSystemMsg(message);
       setTimeout(() => setSystemMsg(''), 5000);
-    });
+    };
+
+    socket.on('receive_message', handleReceiveMessage);
+    socket.on('message_read', handleMessageRead);
+    socket.on('message_delivered', handleMessageDelivered);
+    socket.on('user_status_change', handleUserStatusChange);
+    socket.on('error', handleError);
 
     return () => {
-      socketRef.current?.disconnect();
+      socket.off('receive_message', handleReceiveMessage);
+      socket.off('message_read', handleMessageRead);
+      socket.off('message_delivered', handleMessageDelivered);
+      socket.off('user_status_change', handleUserStatusChange);
+      socket.off('error', handleError);
     };
   }, [token, user]);
 
@@ -127,15 +128,12 @@ const ChatPage = () => {
     }
 
     try {
-      // setSearchError('');
       const res = await axios.get(`${API_URL}/api/auth/search/${searchCode}`);
       setActiveConversation(res.data);
       if (!contacts.find(c => c.id === res.data.id)) setContacts([res.data, ...contacts]);
       setSearchCode('');
       setIsStealth(false);
-    } catch (err) {
-      // setSearchError('Node not found.');
-    }
+    } catch (err) { }
   };
 
   useEffect(() => {
@@ -152,8 +150,8 @@ const ChatPage = () => {
   }, [activeConversation, token]);
 
   const handleSendMessage = async () => {
-    if (!inputText || !activeConversation || !socketRef.current) return;
-    socketRef.current.emit('send_message', {
+    if (!inputText || !activeConversation) return;
+    socket.emit('send_message', {
       receiverId: activeConversation.id,
       content: inputText,
       senderId: user?.id,
@@ -210,7 +208,7 @@ const ChatPage = () => {
 
   const sendVoiceMessage = async () => {
     const blob = recordedAudioRef.current || recordedAudio;
-    if (!blob || !activeConversation || !token || !socketRef.current) {
+    if (!blob || !activeConversation || !token) {
       setSystemMsg('Voice send failed: not ready.');
       setTimeout(() => setSystemMsg(''), 3000);
       return;
@@ -228,7 +226,7 @@ const ChatPage = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      socketRef.current.emit('send_message', {
+      socket.emit('send_message', {
         receiverId: activeConversation.id,
         content: res.data.url,
         senderId: user?.id,
@@ -262,7 +260,7 @@ const ChatPage = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      socketRef.current?.emit('send_message', {
+      socket.emit('send_message', {
         receiverId: activeConversation.id,
         content: res.data.url,
         senderId: user?.id,
