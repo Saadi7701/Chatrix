@@ -160,15 +160,15 @@ const CallOverlay = () => {
    return (
       <AnimatePresence>
          <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10 bg-black/80 backdrop-blur-3xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-3xl"
          >
-            <div className="w-full max-w-4xl aspect-video md:aspect-auto md:h-[80vh] bg-[#0b141a] rounded-[3rem] border border-white/10 overflow-hidden relative shadow-2xl flex flex-col">
+            <div className="w-full h-full md:w-[90vw] md:h-[85vh] md:max-w-5xl bg-[#0b141a] md:rounded-[3rem] border-white/10 overflow-hidden relative shadow-2xl flex flex-col">
                
                {/* Video Streams */}
-               <div className="flex-1 relative bg-black/40 flex items-center justify-center overflow-hidden">
+               <div className="flex-1 relative bg-black/20 flex items-center justify-center overflow-hidden">
                   {callType === 'VIDEO' ? (
                      <>
                         <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
@@ -177,47 +177,56 @@ const CallOverlay = () => {
                            autoPlay 
                            playsInline 
                            muted 
-                           className="absolute top-6 right-6 w-32 md:w-48 aspect-video rounded-2xl border-2 border-white/20 object-cover shadow-2xl bg-black" 
+                           className="absolute top-4 right-4 w-24 md:w-48 aspect-[3/4] md:aspect-video rounded-xl md:rounded-2xl border border-white/20 object-cover shadow-2xl bg-black" 
                         />
                      </>
                   ) : (
-                     <div className="flex flex-col items-center gap-8">
-                        <div className="w-32 h-32 md:w-48 md:h-48 rounded-full bg-cyan-500/10 border-4 border-cyan-400/30 flex items-center justify-center animate-pulse overflow-hidden">
+                     <div className="flex flex-col items-center gap-6 md:gap-8 px-6 text-center">
+                        <div className="w-24 h-24 md:w-48 md:h-48 rounded-full bg-cyan-500/10 border-2 md:border-4 border-cyan-400/30 flex items-center justify-center animate-pulse overflow-hidden">
                            {remoteUser?.profilePic ? (
                               <img src={remoteUser.profilePic} className="w-full h-full object-cover" alt="caller" />
                            ) : (
-                              <User className="w-16 h-16 md:w-24 md:h-24 text-cyan-400" />
+                              <User className="w-12 h-12 md:w-24 md:h-24 text-cyan-400" />
                            )}
                         </div>
-                        <div className="text-center">
-                           <h2 className="text-2xl md:text-4xl font-black text-white tracking-tighter uppercase">{remoteUser?.username || 'NEURAL LINK'}</h2>
-                           <p className="text-xs md:text-sm font-black text-cyan-400 tracking-[0.4em] uppercase mt-2">Active Connection</p>
+                        <div className="space-y-2">
+                           <h2 className="text-xl md:text-4xl font-black text-white tracking-tighter uppercase">{remoteUser?.username || 'NEURAL LINK'}</h2>
+                           <p className="text-[10px] md:text-sm font-black text-cyan-400 tracking-[0.4em] uppercase">Active Connection</p>
                         </div>
                      </div>
                   )}
 
                   {callState === 'RECEIVING' && (
-                     <div className="absolute inset-0 bg-black/60 backdrop-blur-xl flex flex-col items-center justify-center z-50">
-                        <div className="w-24 h-24 rounded-full bg-cyan-400 animate-ping absolute opacity-20" />
-                        <div className="w-32 h-32 rounded-full bg-white/5 border border-white/10 overflow-hidden relative shadow-[0_0_50px_rgba(0,242,255,0.4)] mb-4">
+                     <div className="absolute inset-0 bg-[#050505]/95 backdrop-blur-3xl flex flex-col items-center justify-center z-50 p-6">
+                        <div className="w-32 h-32 md:w-48 md:h-48 rounded-full bg-cyan-400 animate-ping absolute opacity-10" />
+                        <div className="w-24 h-24 md:w-40 md:h-40 rounded-[2rem] md:rounded-[3rem] bg-white/5 border border-white/10 overflow-hidden relative shadow-[0_0_50px_rgba(0,242,255,0.2)] mb-8">
                            <img src={remoteUser?.profilePic || `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${remoteUser?.username}`} className="w-full h-full object-cover" alt="avatar" />
                         </div>
-                        <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-2">{remoteUser?.username}</h2>
-                        <p className="text-[10px] font-black text-cyan-400 tracking-[0.3em] uppercase mb-12">Incoming Transmission...</p>
-                        <div className="flex gap-8">
-                           <button onClick={answerCall} className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center hover:scale-110 transition-all shadow-lg">
-                              <Phone className="text-white w-8 h-8" />
-                           </button>
-                           <button onClick={endCall} className="w-16 h-16 rounded-full bg-red-500 flex items-center justify-center hover:scale-110 transition-all shadow-lg">
-                              <PhoneOff className="text-white w-8 h-8" />
-                           </button>
+                        <h2 className="text-2xl md:text-4xl font-black text-white uppercase tracking-tighter mb-2">{remoteUser?.username}</h2>
+                        <p className="text-[10px] md:text-xs font-black text-cyan-400 tracking-[0.4em] uppercase mb-16 md:mb-24">Incoming Transmission...</p>
+                        
+                        <div className="flex gap-10 md:gap-16">
+                           <div className="flex flex-col items-center gap-4">
+                              <button onClick={answerCall} className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-green-500 flex items-center justify-center hover:scale-110 active:scale-90 transition-all shadow-[0_0_30px_rgba(34,197,94,0.4)]">
+                                 <Phone className="text-white w-7 h-7 md:w-9 md:h-9" />
+                              </button>
+                              <span className="text-[8px] font-black text-green-500 uppercase tracking-widest">Accept</span>
+                           </div>
+
+                           <div className="flex flex-col items-center gap-4">
+                              <button onClick={endCall} className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-red-500 flex items-center justify-center hover:scale-110 active:scale-90 transition-all shadow-[0_0_30px_rgba(239,68,68,0.4)]">
+                                 <PhoneOff className="text-white w-7 h-7 md:w-9 md:h-9" />
+                              </button>
+                              <span className="text-[8px] font-black text-red-500 uppercase tracking-widest">Decline</span>
+                           </div>
                         </div>
                      </div>
                   )}
                </div>
 
                {/* Controls */}
-               <div className="p-6 md:p-10 flex items-center justify-center gap-6 md:gap-12 bg-black/40 border-t border-white/5">
+               <div className="p-6 md:p-10 flex items-center justify-center gap-6 md:gap-12 bg-black/60 border-t border-white/5 pb-12 md:pb-10">
+
                   <button 
                      onClick={() => {
                         const audioTrack = localStreamRef.current?.getAudioTracks()[0];
