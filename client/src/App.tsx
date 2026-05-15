@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LandingPage from './pages/LandingPage.tsx';
 import AuthPage from './pages/AuthPage.tsx';
@@ -17,6 +18,14 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 function App() {
   const { token, user } = useAuthStore();
 
+  useEffect(() => {
+    if (user?.darkTheme === false) {
+      document.body.classList.add('light-mode');
+    } else {
+      document.body.classList.remove('light-mode');
+    }
+  }, [user?.darkTheme]);
+
   return (
     <Router>
       <NotificationManager />
@@ -26,7 +35,7 @@ function App() {
         <div className="ambient-glow-2" />
       </div>
 
-      <div className={`relative z-10 min-h-screen ${user?.darkTheme === false ? 'light-mode' : ''}`}>
+      <div className="relative z-10 min-h-screen">
         <Routes>
           <Route path="/" element={token ? <Navigate to="/chat" /> : <LandingPage />} />
           <Route path="/auth" element={token ? <Navigate to="/chat" /> : <AuthPage />} />

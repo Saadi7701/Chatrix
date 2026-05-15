@@ -107,11 +107,16 @@ body {
 }
 
 /* Neural Light Mode Overrides (Futuristic Aura Gradient) */
-.light-mode {
+body.light-mode {
   background: linear-gradient(135deg, #eef2f3 0%, #d5e1df 100%) !important;
   background-attachment: fixed !important;
   color: #1e293b !important;
 }
+
+.light-mode {
+  color: #1e293b !important;
+}
+
 
 .light-mode .bg-\[\#050505\],
 .light-mode .bg-\[\#0b141a\],
