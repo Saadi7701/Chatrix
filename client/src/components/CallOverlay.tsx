@@ -72,8 +72,22 @@ const CallOverlay = () => {
       };
    }, []);
 
+   const [connStatus, setConnStatus] = useState('INITIALIZING...');
+
    const createPeerConnection = (targetUserId: string) => {
       const pc = new RTCPeerConnection(ICE_SERVERS);
+
+      pc.oniceconnectionstatechange = () => {
+         console.log('[ICE Status]:', pc.iceConnectionState);
+         switch(pc.iceConnectionState) {
+            case 'checking': setConnStatus('HANDSHAKING...'); break;
+            case 'connected': 
+            case 'completed': setConnStatus('LINK ESTABLISHED'); break;
+            case 'failed': setConnStatus('FIREWALL BLOCK'); break;
+            case 'disconnected': setConnStatus('LINK LOST'); break;
+            default: setConnStatus('SYNCING...');
+         }
+      };
 
       pc.onicecandidate = (event) => {
          if (event.candidate) {
@@ -82,8 +96,11 @@ const CallOverlay = () => {
       };
 
       pc.ontrack = (event) => {
+         console.log('Remote track received:', event.track.kind);
          if (remoteVideoRef.current) {
             remoteVideoRef.current.srcObject = event.streams[0];
+            // Force play to bypass browser silence rules
+            remoteVideoRef.current.play().catch(err => console.error('Auto-play failed:', err));
          }
          remoteStreamRef.current = event.streams[0];
       };
@@ -205,8 +222,8 @@ const CallOverlay = () => {
                         </div>
                         <div className="space-y-2">
                            <h2 className="text-xl md:text-4xl font-black text-white tracking-tighter uppercase">{remoteUser?.username || 'NEURAL LINK'}</h2>
-                           <p className="text-[10px] md:text-sm font-black text-cyan-400 tracking-[0.4em] uppercase">
-                              {callState === 'ACTIVE' ? 'Quantum Voice Link Active' : 'Establishing Synchronized Feed...'}
+                           <p className={`text-[10px] md:text-sm font-black tracking-[0.4em] uppercase ${connStatus === 'FIREWALL BLOCK' ? 'text-red-500' : 'text-cyan-400'}`}>
+                              {callState === 'ACTIVE' ? connStatus : 'Establishing Synchronized Feed...'}
                            </p>
                         </div>
                      </div>
