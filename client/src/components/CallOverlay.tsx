@@ -167,12 +167,12 @@ const CallOverlay = () => {
          >
             <div className="w-full h-full md:w-[90vw] md:h-[85vh] md:max-w-5xl bg-[#0b141a] md:rounded-[3rem] border-white/10 overflow-hidden relative shadow-2xl flex flex-col">
                
-               {/* Persistent Media Element for Remote Stream */}
+               {/* Persistent Media Element for Remote Stream - Keep visible to browser but hidden from user to prevent mobile audio suspension */}
                <video 
                   ref={remoteVideoRef as any} 
                   autoPlay 
                   playsInline 
-                  className={`w-full h-full object-cover ${callType === 'VOICE' ? 'hidden' : ''}`} 
+                  className={`absolute inset-0 w-full h-full object-cover z-0 ${callType === 'VOICE' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`} 
                />
 
                {/* Video Streams / Voice HUD */}
