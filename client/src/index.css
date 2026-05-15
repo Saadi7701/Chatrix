@@ -8,9 +8,8 @@
   --border-muted: rgba(255, 255, 255, 0.08);
   --text-primary: #e9edef;
   --text-dim: #8696a0;
-}
-
-@theme {
+  
+  /* Tailwind v4 variable mapping */
   --color-neon-cyan: #00f2ff;
   --color-neon-magenta: #bc13fe;
 }
