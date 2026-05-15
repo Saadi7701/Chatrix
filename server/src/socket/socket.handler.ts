@@ -45,6 +45,14 @@ export const setupSocket = (io: Server) => {
           receiverId,
           type: type as any,
           status: receiverIsOnline ? 'DELIVERED' : 'SENT'
+        },
+        include: {
+          sender: {
+            select: {
+              username: true,
+              profilePic: true
+            }
+          }
         }
       });
 
@@ -58,14 +66,20 @@ export const setupSocket = (io: Server) => {
     });
 
     // Mark as Read
-    socket.on('mark_as_read', async ({ messageId, senderId }) => {
+    socket.on('mark_as_read', async ({ messageId, senderId, receiverId }) => {
+      // Find the user who is marking as read (the receiver of the message)
+      const receiver = await prisma.user.findUnique({
+        where: { id: receiverId },
+        select: { ghostMode: true }
+      });
+
       await prisma.message.update({
         where: { id: messageId },
         data: { status: 'SEEN' }
       });
       
-      // Notify sender
-      if (userSocketMap[senderId]) {
+      // Notify sender only if ghostMode is disabled
+      if (!receiver?.ghostMode && userSocketMap[senderId]) {
         io.to(senderId).emit('message_read', { messageId });
       }
     });

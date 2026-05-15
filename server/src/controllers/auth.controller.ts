@@ -193,6 +193,39 @@ export const updateProfile = async (req: Request, res: Response) => {
   }
 };
 
+export const updateSettings = async (req: Request, res: Response) => {
+  const { 
+    ghostMode, 
+    quantumEncryption, 
+    notificationsEnabled, 
+    callTransmissions, 
+    storyInjections, 
+    darkTheme, 
+    networkCache, 
+    biometricLock 
+  } = req.body;
+  const userId = (req as any).userId;
+
+  try {
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { 
+        ghostMode, 
+        quantumEncryption, 
+        notificationsEnabled, 
+        callTransmissions, 
+        storyInjections, 
+        darkTheme, 
+        networkCache, 
+        biometricLock 
+      }
+    });
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating settings' });
+  }
+};
+
 export const updateStealthCode = async (req: Request, res: Response) => {
   const { code } = req.body;
   const userId = (req as any).userId;

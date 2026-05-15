@@ -49,6 +49,16 @@ model User {
   // Security/Auth
   otp           String?
   otpExpires    DateTime?
+  // Settings
+  ghostMode           Boolean   @default(false)
+  quantumEncryption   Boolean   @default(true)
+  notificationsEnabled Boolean  @default(true)
+  callTransmissions   Boolean   @default(true)
+  storyInjections     Boolean   @default(false)
+  darkTheme           Boolean   @default(true)
+  networkCache        Boolean   @default(false)
+  biometricLock       Boolean   @default(true)
+
   isVerified    Boolean   @default(false)
   sessions      Session[]
 

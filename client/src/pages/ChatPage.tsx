@@ -66,7 +66,11 @@ const ChatPage = () => {
       if (currentChat?.id === message.senderId || currentChat?.id === message.receiverId) {
         addMessage(message);
         if (currentChat?.id === message.senderId) {
-          socketRef.current?.emit('mark_as_read', { messageId: message.id, senderId: message.senderId });
+          socketRef.current?.emit('mark_as_read', { 
+            messageId: message.id, 
+            senderId: message.senderId,
+            receiverId: user?.id 
+          });
         }
       }
     });
@@ -353,6 +357,12 @@ const ChatPage = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-4 md:gap-6 text-gray-500">
+                  {user?.quantumEncryption && (
+                    <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20">
+                      <Shield className="w-3 h-3 text-cyan-400" />
+                      <span className="text-[8px] font-black text-cyan-400 tracking-widest uppercase">Quantum Secured</span>
+                    </div>
+                  )}
                   <Video className="w-5 h-5 cursor-pointer hover:text-white transition-colors hidden sm:block" />
                   <Phone className="w-5 h-5 cursor-pointer hover:text-white transition-colors" />
                   <MoreVertical className="w-5 h-5 cursor-pointer hover:text-white" />

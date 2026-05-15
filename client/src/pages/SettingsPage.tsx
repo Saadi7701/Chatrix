@@ -31,6 +31,24 @@ const SettingsPage = () => {
       }
    };
 
+   const updateSetting = async (key: string, value: any) => {
+      if (!token || !user) return;
+      try {
+         const res = await axios.put(`${API_URL}/api/auth/settings`, { [key]: value }, {
+            headers: { Authorization: `Bearer ${token}` }
+         });
+         setAuth(res.data, token);
+         
+         if (key === 'notificationsEnabled' && value === true) {
+            if ("Notification" in window) {
+               Notification.requestPermission();
+            }
+         }
+      } catch (err) {
+         console.error('Failed to update neural setting', err);
+      }
+   };
+
    return (
       <DashboardLayout>
          <div className="flex-1 flex flex-col p-6 md:p-12 bg-[#050505]">
@@ -110,8 +128,8 @@ const SettingsPage = () => {
                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
                   <Section title="Privacy & Stealth" icon={<Shield className="text-green-400" />}>
                      <div className="p-6 space-y-6 rounded-[2rem] bg-white/[0.03] border border-white/5">
-                        <Toggle label="Ghost Protocol Mode" active />
-                        <Toggle label="Quantum Encryption" active />
+                        <Toggle label="Ghost Protocol Mode" active={user?.ghostMode} onToggle={(val: boolean) => updateSetting('ghostMode', val)} />
+                        <Toggle label="Quantum Encryption" active={user?.quantumEncryption} onToggle={(val: boolean) => updateSetting('quantumEncryption', val)} />
 
                         <div className="pt-4 border-t border-white/5">
                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3 block">Stealth Access Key</label>
@@ -144,17 +162,17 @@ const SettingsPage = () => {
 
                   <Section title="Notifications" icon={<Bell className="text-orange-400" />}>
                      <div className="p-6 space-y-4 rounded-[2rem] bg-white/[0.03] border border-white/5">
-                        <Toggle label="Neural Pulse Pings" active />
-                        <Toggle label="Call Transmissions" active />
-                        <Toggle label="Story Injections" />
+                        <Toggle label="Neural Pulse Pings" active={user?.notificationsEnabled} onToggle={(val: boolean) => updateSetting('notificationsEnabled', val)} />
+                        <Toggle label="Call Transmissions" active={user?.callTransmissions} onToggle={(val: boolean) => updateSetting('callTransmissions', val)} />
+                        <Toggle label="Story Injections" active={user?.storyInjections} onToggle={(val: boolean) => updateSetting('storyInjections', val)} />
                      </div>
                   </Section>
 
                   <Section title="System" icon={<Cpu className="text-purple-400" />}>
                      <div className="p-6 space-y-4 rounded-[2rem] bg-white/[0.03] border border-white/5">
-                        <Toggle label="Dark Matter Theme" active />
-                        <Toggle label="Neural Network Cache" />
-                        <Toggle label="Bio-Metric Lock" active />
+                        <Toggle label="Dark Matter Theme" active={user?.darkTheme} onToggle={(val: boolean) => updateSetting('darkTheme', val)} />
+                        <Toggle label="Neural Network Cache" active={user?.networkCache} onToggle={(val: boolean) => updateSetting('networkCache', val)} />
+                        <Toggle label="Bio-Metric Lock" active={user?.biometricLock} onToggle={(val: boolean) => updateSetting('biometricLock', val)} />
                      </div>
                   </Section>
                </div>
@@ -174,8 +192,8 @@ const Section = ({ title, icon, children }: any) => (
    </div>
 );
 
-const Toggle = ({ label, active = false }: any) => (
-   <div className="flex items-center justify-between group cursor-pointer">
+const Toggle = ({ label, active = false, onToggle }: any) => (
+   <div className="flex items-center justify-between group cursor-pointer" onClick={() => onToggle(!active)}>
       <span className="text-xs font-bold text-gray-400 group-hover:text-white transition-colors uppercase tracking-widest">{label}</span>
       <div className={`w-10 h-5 rounded-full p-1 transition-all ${active ? 'bg-cyan-500 shadow-[0_0_10px_#00f2ff]' : 'bg-white/10'}`}>
          <div className={`w-3 h-3 rounded-full bg-black transition-all ${active ? 'translate-x-5' : 'translate-x-0'}`} />

@@ -6,6 +6,7 @@ import StoriesPage from './pages/StoriesPage.tsx';
 import CallLogsPage from './pages/CallLogsPage.tsx';
 import SettingsPage from './pages/SettingsPage.tsx';
 import { useAuthStore } from './store/useAuthStore';
+import NotificationManager from './components/NotificationManager';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const token = useAuthStore((state) => state.token);
@@ -14,17 +15,18 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 function App() {
-  const token = useAuthStore((state) => state.token);
+  const { token, user } = useAuthStore();
 
   return (
     <Router>
+      <NotificationManager />
       {/* High-End CSS Background System */}
       <div className="cyber-bg fixed inset-0 z-0">
         <div className="ambient-glow-1" />
         <div className="ambient-glow-2" />
       </div>
 
-      <div className="relative z-10 min-h-screen">
+      <div className={`relative z-10 min-h-screen ${user?.darkTheme ? 'dark-matter' : ''}`}>
         <Routes>
           <Route path="/" element={token ? <Navigate to="/chat" /> : <LandingPage />} />
           <Route path="/auth" element={token ? <Navigate to="/chat" /> : <AuthPage />} />
