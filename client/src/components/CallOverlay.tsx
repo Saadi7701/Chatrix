@@ -167,25 +167,24 @@ const CallOverlay = () => {
          >
             <div className="w-full h-full md:w-[90vw] md:h-[85vh] md:max-w-5xl bg-[#0b141a] md:rounded-[3rem] border-white/10 overflow-hidden relative shadow-2xl flex flex-col">
                
-               {/* Hidden Audio for Voice-Only / Fallback */}
-               <audio ref={remoteVideoRef} autoPlay playsInline className="hidden" />
+               {/* Persistent Media Element for Remote Stream */}
+               <video 
+                  ref={remoteVideoRef as any} 
+                  autoPlay 
+                  playsInline 
+                  className={`w-full h-full object-cover ${callType === 'VOICE' ? 'hidden' : ''}`} 
+               />
 
-               {/* Video Streams */}
-               <div className="flex-1 relative bg-black/20 flex items-center justify-center overflow-hidden">
+               {/* Video Streams / Voice HUD */}
+               <div className={`flex-1 relative bg-black/20 flex items-center justify-center overflow-hidden ${callType === 'VIDEO' ? 'absolute inset-0' : ''}`}>
                   {callType === 'VIDEO' ? (
                      <>
-                        <video 
-                           ref={remoteVideoRef as any} 
-                           autoPlay 
-                           playsInline 
-                           className="w-full h-full object-cover" 
-                        />
                         <video 
                            ref={localVideoRef} 
                            autoPlay 
                            playsInline 
                            muted 
-                           className="absolute top-4 right-4 w-24 md:w-48 aspect-[3/4] md:aspect-video rounded-xl md:rounded-2xl border border-white/20 object-cover shadow-2xl bg-black" 
+                           className="absolute top-4 right-4 w-24 md:w-48 aspect-[3/4] md:aspect-video rounded-xl md:rounded-2xl border border-white/20 object-cover shadow-2xl bg-black z-20" 
                         />
                      </>
                   ) : (
@@ -200,11 +199,12 @@ const CallOverlay = () => {
                         <div className="space-y-2">
                            <h2 className="text-xl md:text-4xl font-black text-white tracking-tighter uppercase">{remoteUser?.username || 'NEURAL LINK'}</h2>
                            <p className="text-[10px] md:text-sm font-black text-cyan-400 tracking-[0.4em] uppercase">
-                              {callState === 'ACTIVE' ? 'Link Established' : 'Synchronizing...'}
+                              {callState === 'ACTIVE' ? 'Quantum Voice Link Active' : 'Establishing Synchronized Feed...'}
                            </p>
                         </div>
                      </div>
                   )}
+               </div>
 
                   {callState === 'RECEIVING' && (
                      <div className="absolute inset-0 bg-[#050505]/95 backdrop-blur-3xl flex flex-col items-center justify-center z-50 p-6">
