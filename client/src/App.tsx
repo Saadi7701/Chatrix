@@ -8,6 +8,7 @@ import CallLogsPage from './pages/CallLogsPage.tsx';
 import SettingsPage from './pages/SettingsPage.tsx';
 import { useAuthStore } from './store/useAuthStore';
 import NotificationManager from './components/NotificationManager';
+import CallOverlay from './components/CallOverlay';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const token = useAuthStore((state) => state.token);
@@ -29,6 +30,7 @@ function App() {
   return (
     <Router>
       <NotificationManager />
+      <CallOverlay />
       {/* High-End CSS Background System */}
       <div className="cyber-bg fixed inset-0 z-0">
         <div className="ambient-glow-1" />

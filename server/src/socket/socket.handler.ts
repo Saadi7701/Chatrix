@@ -119,6 +119,33 @@ export const setupSocket = (io: Server) => {
       socket.to(receiverId).emit('display_typing', { isTyping });
     });
 
+    // --- WEBRTC SIGNALING FOR CALLS ---
+    socket.on('call_user', ({ offer, to, from, type }) => {
+      console.log(`[socket]: Incoming ${type} call from ${from} to ${to}`);
+      if (userSocketMap[to]) {
+        io.to(to).emit('incoming_call', { offer, from, type });
+      }
+    });
+
+    socket.on('answer_call', ({ answer, to }) => {
+      console.log(`[socket]: Call answered for user ${to}`);
+      if (userSocketMap[to]) {
+        io.to(to).emit('call_answered', { answer });
+      }
+    });
+
+    socket.on('ice_candidate', ({ candidate, to }) => {
+      if (userSocketMap[to]) {
+        io.to(to).emit('ice_candidate', { candidate });
+      }
+    });
+
+    socket.on('end_call', ({ to }) => {
+      if (userSocketMap[to]) {
+        io.to(to).emit('call_ended');
+      }
+    });
+
     socket.on('disconnect', async () => {
       let disconnectedUserId: string | null = null;
       for (const [userId, socketId] of Object.entries(userSocketMap)) {

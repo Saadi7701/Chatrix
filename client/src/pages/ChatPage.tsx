@@ -367,8 +367,14 @@ const ChatPage = () => {
                       <span className="text-[8px] font-black text-cyan-400 tracking-widest uppercase">Quantum Secured</span>
                     </div>
                   )}
-                  <Video className="w-5 h-5 cursor-pointer hover:text-white transition-colors hidden sm:block" />
-                  <Phone className="w-5 h-5 cursor-pointer hover:text-white transition-colors" />
+                  <Video 
+                    onClick={() => (window as any).startNeuralCall?.(activeConversation, 'VIDEO')}
+                    className="w-5 h-5 cursor-pointer hover:text-cyan-400 transition-colors hidden sm:block" 
+                  />
+                  <Phone 
+                    onClick={() => (window as any).startNeuralCall?.(activeConversation, 'VOICE')}
+                    className="w-5 h-5 cursor-pointer hover:text-cyan-400 transition-colors" 
+                  />
                   <MoreVertical className="w-5 h-5 cursor-pointer hover:text-white" />
                 </div>
               </div>
@@ -415,7 +421,10 @@ const ChatPage = () => {
                       </div>
 
                       <div className="flex gap-4">
-                         <button className="px-8 py-4 rounded-2xl bg-cyan-500 text-black font-black text-[10px] tracking-widest uppercase shadow-[0_0_30px_rgba(0,242,255,0.3)] hover:scale-105 transition-all">
+                         <button 
+                            onClick={() => (window as any).startNeuralCall?.(activeConversation, 'VOICE')}
+                            className="px-8 py-4 rounded-2xl bg-cyan-500 text-black font-black text-[10px] tracking-widest uppercase shadow-[0_0_30px_rgba(0,242,255,0.3)] hover:scale-105 transition-all"
+                         >
                             Initiate Voice Link
                          </button>
                          <button className="px-8 py-4 rounded-2xl bg-white/5 text-white font-black text-[10px] tracking-widest uppercase border border-white/10 hover:bg-white/10 transition-all">
