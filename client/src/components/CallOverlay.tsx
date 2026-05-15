@@ -206,41 +206,40 @@ const CallOverlay = () => {
                   )}
                </div>
 
-                  {callState === 'RECEIVING' && (
-                     <div className="absolute inset-0 bg-[#050505]/95 backdrop-blur-3xl flex flex-col items-center justify-center z-50 p-6">
-                        {/* Pinging background - must be pointer-events-none */}
-                        <div className="w-32 h-32 md:w-48 md:h-48 rounded-full bg-cyan-400 animate-ping absolute opacity-10 pointer-events-none" />
-                        
-                        <div className="w-24 h-24 md:w-40 md:h-40 rounded-[2rem] md:rounded-[3rem] bg-white/5 border border-white/10 overflow-hidden relative shadow-[0_0_50px_rgba(0,242,255,0.2)] mb-8">
-                           <img src={remoteUser?.profilePic || `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${remoteUser?.username}`} className="w-full h-full object-cover" alt="avatar" />
+               {callState === 'RECEIVING' && (
+                  <div className="absolute inset-0 bg-[#050505]/95 backdrop-blur-3xl flex flex-col items-center justify-center z-50 p-6">
+                     {/* Pinging background - must be pointer-events-none */}
+                     <div className="w-32 h-32 md:w-48 md:h-48 rounded-full bg-cyan-400 animate-ping absolute opacity-10 pointer-events-none" />
+                     
+                     <div className="w-24 h-24 md:w-40 md:h-40 rounded-[2rem] md:rounded-[3rem] bg-white/5 border border-white/10 overflow-hidden relative shadow-[0_0_50px_rgba(0,242,255,0.2)] mb-8">
+                        <img src={remoteUser?.profilePic || `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${remoteUser?.username}`} className="w-full h-full object-cover" alt="avatar" />
+                     </div>
+                     <h2 className="text-2xl md:text-4xl font-black text-white uppercase tracking-tighter mb-2">{remoteUser?.username}</h2>
+                     <p className="text-[10px] md:text-xs font-black text-cyan-400 tracking-[0.4em] uppercase mb-16 md:mb-24">Incoming Transmission...</p>
+                     
+                     <div className="flex gap-10 md:gap-16 relative z-[60]">
+                        <div className="flex flex-col items-center gap-4">
+                           <button 
+                              onClick={(e) => { e.stopPropagation(); answerCall(); }} 
+                              className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-green-500 flex items-center justify-center hover:scale-110 active:scale-90 transition-all shadow-[0_0_30px_rgba(34,197,94,0.4)] cursor-pointer touch-manipulation"
+                           >
+                              <Phone className="text-white w-7 h-7 md:w-9 md:h-9" />
+                           </button>
+                           <span className="text-[8px] font-black text-green-500 uppercase tracking-widest">Accept</span>
                         </div>
-                        <h2 className="text-2xl md:text-4xl font-black text-white uppercase tracking-tighter mb-2">{remoteUser?.username}</h2>
-                        <p className="text-[10px] md:text-xs font-black text-cyan-400 tracking-[0.4em] uppercase mb-16 md:mb-24">Incoming Transmission...</p>
-                        
-                        <div className="flex gap-10 md:gap-16 relative z-[60]">
-                           <div className="flex flex-col items-center gap-4">
-                              <button 
-                                 onClick={(e) => { e.stopPropagation(); answerCall(); }} 
-                                 className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-green-500 flex items-center justify-center hover:scale-110 active:scale-90 transition-all shadow-[0_0_30px_rgba(34,197,94,0.4)] cursor-pointer touch-manipulation"
-                              >
-                                 <Phone className="text-white w-7 h-7 md:w-9 md:h-9" />
-                              </button>
-                              <span className="text-[8px] font-black text-green-500 uppercase tracking-widest">Accept</span>
-                           </div>
 
-                           <div className="flex flex-col items-center gap-4">
-                              <button 
-                                 onClick={(e) => { e.stopPropagation(); endCall(); }} 
-                                 className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-red-500 flex items-center justify-center hover:scale-110 active:scale-90 transition-all shadow-[0_0_30px_rgba(239,68,68,0.4)] cursor-pointer touch-manipulation"
-                              >
-                                 <PhoneOff className="text-white w-7 h-7 md:w-9 md:h-9" />
-                              </button>
-                              <span className="text-[8px] font-black text-red-500 uppercase tracking-widest">Decline</span>
-                           </div>
+                        <div className="flex flex-col items-center gap-4">
+                           <button 
+                              onClick={(e) => { e.stopPropagation(); endCall(); }} 
+                              className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-red-500 flex items-center justify-center hover:scale-110 active:scale-90 transition-all shadow-[0_0_30px_rgba(239,68,68,0.4)] cursor-pointer touch-manipulation"
+                           >
+                              <PhoneOff className="text-white w-7 h-7 md:w-9 md:h-9" />
+                           </button>
+                           <span className="text-[8px] font-black text-red-500 uppercase tracking-widest">Decline</span>
                         </div>
                      </div>
-                  )}
-               </div>
+                  </div>
+               )}
 
                {/* Controls */}
                <div className="p-6 md:p-10 flex items-center justify-center gap-6 md:gap-12 bg-black/60 border-t border-white/5 pb-12 md:pb-10">
