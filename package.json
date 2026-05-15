@@ -1,0 +1,13 @@
+{
+  "name": "chatrix-monorepo",
+  "private": true,
+  "version": "1.0.0",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "cd server && npm start",
+    "build": "cd server && npm install && npx prisma generate",
+    "postinstall": "cd server && npm install"
+  }
+}
