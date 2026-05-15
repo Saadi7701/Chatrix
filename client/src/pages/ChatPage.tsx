@@ -79,6 +79,10 @@ const ChatPage = () => {
       updateMessageStatus(messageId, 'SEEN');
     });
 
+    socketRef.current.on('message_delivered', ({ messageId }) => {
+      updateMessageStatus(messageId, 'DELIVERED');
+    });
+
     socketRef.current.on('user_status_change', ({ userId, isOnline }) => {
       updateUserStatus(userId, isOnline);
     });

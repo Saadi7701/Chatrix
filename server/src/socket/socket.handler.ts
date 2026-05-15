@@ -18,8 +18,38 @@ export const setupSocket = (io: Server) => {
         data: { isOnline: true, lastSeen: new Date() }
       });
       
+      // 1. Find all messages sent to this user while they were offline
+      const pendingMessages = await prisma.message.findMany({
+        where: {
+          receiverId: userId,
+          status: 'SENT'
+        },
+        include: {
+          sender: {
+            select: { username: true, profilePic: true }
+          }
+        }
+      });
+
+      // 2. Deliver them and update status to DELIVERED
+      for (const msg of pendingMessages) {
+        // Emit to the receiver who just joined
+        socket.emit('receive_message', { ...msg, status: 'DELIVERED' });
+
+        // Update DB
+        await prisma.message.update({
+          where: { id: msg.id },
+          data: { status: 'DELIVERED' }
+        });
+
+        // 3. Notify the original sender that it's now delivered
+        if (userSocketMap[msg.senderId]) {
+          io.to(msg.senderId).emit('message_delivered', { messageId: msg.id });
+        }
+      }
+
       io.emit('user_status_change', { userId, isOnline: true });
-      console.log(`[socket]: User ${userId} joined and is ONLINE`);
+      console.log(`[socket]: User ${userId} joined and is ONLINE - ${pendingMessages.length} pending messages delivered.`);
     });
 
     // Handle messages
