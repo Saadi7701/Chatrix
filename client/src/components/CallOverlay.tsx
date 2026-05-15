@@ -27,10 +27,12 @@ const CallOverlay = () => {
    const pendingIceCandidates = useRef<RTCIceCandidateInit[]>([]);
 
    useEffect(() => {
-      socket.on('incoming_call', async ({ offer, from, type }) => {
-         setRemoteUser({ id: from }); // We'd ideally fetch user details here
+      socket.on('incoming_call', async ({ offer, from, type, username, profilePic }) => {
+         setRemoteUser({ id: from, username, profilePic });
          setCallType(type);
          setCallState('RECEIVING');
+         
+         // Play ringing sound logic could go here
          
          // Pre-setup peer connection
          const pc = createPeerConnection(from);
@@ -180,12 +182,16 @@ const CallOverlay = () => {
                      </>
                   ) : (
                      <div className="flex flex-col items-center gap-8">
-                        <div className="w-32 h-32 md:w-48 md:h-48 rounded-full bg-cyan-500/10 border-4 border-cyan-400/30 flex items-center justify-center animate-pulse">
-                           <User className="w-16 h-16 md:w-24 md:h-24 text-cyan-400" />
+                        <div className="w-32 h-32 md:w-48 md:h-48 rounded-full bg-cyan-500/10 border-4 border-cyan-400/30 flex items-center justify-center animate-pulse overflow-hidden">
+                           {remoteUser?.profilePic ? (
+                              <img src={remoteUser.profilePic} className="w-full h-full object-cover" alt="caller" />
+                           ) : (
+                              <User className="w-16 h-16 md:w-24 md:h-24 text-cyan-400" />
+                           )}
                         </div>
                         <div className="text-center">
-                           <h2 className="text-2xl md:text-4xl font-black text-white tracking-tighter uppercase">Connection Established</h2>
-                           <p className="text-xs md:text-sm font-black text-cyan-400 tracking-[0.4em] uppercase mt-2">Neural Voice Link V.1</p>
+                           <h2 className="text-2xl md:text-4xl font-black text-white tracking-tighter uppercase">{remoteUser?.username || 'NEURAL LINK'}</h2>
+                           <p className="text-xs md:text-sm font-black text-cyan-400 tracking-[0.4em] uppercase mt-2">Active Connection</p>
                         </div>
                      </div>
                   )}
@@ -193,10 +199,11 @@ const CallOverlay = () => {
                   {callState === 'RECEIVING' && (
                      <div className="absolute inset-0 bg-black/60 backdrop-blur-xl flex flex-col items-center justify-center z-50">
                         <div className="w-24 h-24 rounded-full bg-cyan-400 animate-ping absolute opacity-20" />
-                        <div className="w-24 h-24 rounded-full bg-cyan-400 flex items-center justify-center relative shadow-[0_0_50px_rgba(0,242,255,0.4)] mb-8">
-                           {callType === 'VIDEO' ? <Video className="text-black w-10 h-10" /> : <Phone className="text-black w-10 h-10" />}
+                        <div className="w-32 h-32 rounded-full bg-white/5 border border-white/10 overflow-hidden relative shadow-[0_0_50px_rgba(0,242,255,0.4)] mb-4">
+                           <img src={remoteUser?.profilePic || `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${remoteUser?.username}`} className="w-full h-full object-cover" alt="avatar" />
                         </div>
-                        <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-12">Incoming Transmission...</h2>
+                        <h2 className="text-2xl font-black text-white uppercase tracking-widest mb-2">{remoteUser?.username}</h2>
+                        <p className="text-[10px] font-black text-cyan-400 tracking-[0.3em] uppercase mb-12">Incoming Transmission...</p>
                         <div className="flex gap-8">
                            <button onClick={answerCall} className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center hover:scale-110 transition-all shadow-lg">
                               <Phone className="text-white w-8 h-8" />

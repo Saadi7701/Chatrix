@@ -120,10 +120,14 @@ export const setupSocket = (io: Server) => {
     });
 
     // --- WEBRTC SIGNALING FOR CALLS ---
-    socket.on('call_user', ({ offer, to, from, type }) => {
-      console.log(`[socket]: Incoming ${type} call from ${from} to ${to}`);
+    socket.on('call_user', async ({ offer, to, from, type }) => {
+      const caller = await prisma.user.findUnique({
+        where: { id: from },
+        select: { username: true, profilePic: true }
+      });
+      console.log(`[socket]: Incoming ${type} call from ${caller?.username} to ${to}`);
       if (userSocketMap[to]) {
-        io.to(to).emit('incoming_call', { offer, from, type });
+        io.to(to).emit('incoming_call', { offer, from, type, username: caller?.username, profilePic: caller?.profilePic });
       }
     });
 
