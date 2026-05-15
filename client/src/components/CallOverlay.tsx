@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Phone, Video, X, Mic, MicOff, VideoOff, PhoneOff, User } from 'lucide-react';
 import { socket } from '../services/socket';
