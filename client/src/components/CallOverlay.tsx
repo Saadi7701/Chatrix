@@ -93,41 +93,48 @@ const CallOverlay = () => {
    };
 
    const startCall = async (targetUser: any, type: 'VOICE' | 'VIDEO') => {
-      setRemoteUser(targetUser);
-      setCallType(type);
-      setCallState('RINGING');
-
-      const stream = await navigator.mediaDevices.getUserMedia({
-         video: type === 'VIDEO',
-         audio: true,
-      });
-      localStreamRef.current = stream;
-      if (localVideoRef.current) localVideoRef.current.srcObject = stream;
-
-      const pc = createPeerConnection(targetUser.id);
-      stream.getTracks().forEach((track) => pc.addTrack(track, stream));
-
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-
-      socket.emit('call_user', { offer, to: targetUser.id, from: user?.id, type });
+      try {
+         const stream = await navigator.mediaDevices.getUserMedia({
+            video: type === 'VIDEO',
+            audio: true,
+         });
+         setRemoteUser(targetUser);
+         setCallType(type);
+         setCallState('RINGING');
+         localStreamRef.current = stream;
+         if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+         const pc = createPeerConnection(targetUser.id);
+         stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+         const offer = await pc.createOffer();
+         await pc.setLocalDescription(offer);
+         socket.emit('call_user', { offer, to: targetUser.id, from: user?.id, type });
+      } catch (err) {
+         console.error('Permission denied', err);
+         alert('PROTOCOL ERROR: Neural Link requires Microphone/Camera permissions. Please check your browser settings.');
+         setCallState('IDLE');
+      }
    };
 
    const answerCall = async () => {
-      const stream = await navigator.mediaDevices.getUserMedia({
-         video: callType === 'VIDEO',
-         audio: true,
-      });
-      localStreamRef.current = stream;
-      if (localVideoRef.current) localVideoRef.current.srcObject = stream;
-
-      const pc = peerConnectionRef.current;
-      if (pc) {
-         stream.getTracks().forEach((track) => pc.addTrack(track, stream));
-         const answer = await pc.createAnswer();
-         await pc.setLocalDescription(answer);
-         socket.emit('answer_call', { answer, to: remoteUser.id });
-         setCallState('ACTIVE');
+      try {
+         const stream = await navigator.mediaDevices.getUserMedia({
+            video: callType === 'VIDEO',
+            audio: true,
+         });
+         localStreamRef.current = stream;
+         if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+         const pc = peerConnectionRef.current;
+         if (pc) {
+            stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            socket.emit('answer_call', { answer, to: remoteUser.id });
+            setCallState('ACTIVE');
+         }
+      } catch (err) {
+         console.error('Permission denied', err);
+         alert('LINK FAILED: Could not access hardware. Please allow microphone permissions.');
+         endCall();
       }
    };
 
