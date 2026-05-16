@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Phone, Video, Mic, MicOff, VideoOff, PhoneOff, User, Volume2, VolumeX } from 'lucide-react';
+import { Phone, Video, Mic, MicOff, VideoOff, PhoneOff, User, Shield } from 'lucide-react';
 import { socket } from '../services/socket';
 import { useAuthStore } from '../store/useAuthStore';
 
@@ -27,8 +27,7 @@ const CallOverlay = () => {
    
    const [isMuted, setIsMuted] = useState(false);
    const [isVideoOff, setIsVideoOff] = useState(false);
-   const [isSpeakerOn, setIsSpeakerOn] = useState(true);
-   const [connStatus, setConnStatus] = useState('INITIALIZING...');
+   const [connStatus, setConnStatus] = useState('SYNCED'); // Re-using this for global health
 
    const localStreamRef = useRef<MediaStream | null>(null);
    const pcsRef = useRef<{ [userId: string]: RTCPeerConnection }>({});
@@ -99,6 +98,10 @@ const CallOverlay = () => {
 
    const createPeerConnection = (targetUserId: string) => {
       const pc = new RTCPeerConnection(ICE_SERVERS);
+
+      pc.oniceconnectionstatechange = () => {
+         setConnStatus(pc.iceConnectionState.toUpperCase());
+      };
 
       pc.onicecandidate = (event) => {
          if (event.candidate) {
@@ -200,7 +203,8 @@ const CallOverlay = () => {
                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                         {isVideoOff && <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center"><User className="text-gray-600" size={40} /></div>}
                      </div>
-                     <div className="absolute bottom-4 left-4 px-3 py-1 bg-black/40 backdrop-blur-md rounded-full border border-white/10">
+                     <div className="absolute bottom-4 left-4 px-3 py-1 bg-black/40 backdrop-blur-md rounded-full border border-white/10 flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
                         <p className="text-[10px] font-black text-white uppercase tracking-widest">You {isMuted && '(Muted)'}</p>
                      </div>
                   </div>
@@ -248,12 +252,16 @@ const CallOverlay = () => {
                   <button onClick={() => {
                      const track = localStreamRef.current?.getAudioTracks()[0];
                      if (track) { track.enabled = !track.enabled; setIsMuted(!track.enabled); }
-                  }} className={`p-4 md:p-5 rounded-2xl transition-all ${isMuted ? 'bg-red-500/20 text-red-500' : 'bg-white/5 text-white hover:bg-white/10'}`}><Mic size={24} /></button>
+                  }} className={`p-4 md:p-5 rounded-2xl transition-all ${isMuted ? 'bg-red-500/20 text-red-500' : 'bg-white/5 text-white hover:bg-white/10'}`}>
+                     {isMuted ? <MicOff size={24} /> : <Mic size={24} />}
+                  </button>
 
                   <button onClick={() => {
                      const track = localStreamRef.current?.getVideoTracks()[0];
                      if (track) { track.enabled = !track.enabled; setIsVideoOff(!track.enabled); }
-                  }} className={`p-4 md:p-5 rounded-2xl transition-all ${isVideoOff ? 'bg-red-500/20 text-red-500' : 'bg-white/5 text-white hover:bg-white/10'}`}><Video size={24} /></button>
+                  }} className={`p-4 md:p-5 rounded-2xl transition-all ${isVideoOff ? 'bg-red-500/20 text-red-500' : 'bg-white/5 text-white hover:bg-white/10'}`}>
+                     {isVideoOff ? <VideoOff size={24} /> : <Video size={24} />}
+                  </button>
 
                   <button onClick={endCall} className="p-5 md:p-6 rounded-2xl bg-red-500 text-white shadow-[0_0_30px_rgba(239,68,68,0.4)] hover:scale-110 active:scale-95 transition-all"><PhoneOff size={28} /></button>
                </div>
