@@ -202,8 +202,8 @@ const CallOverlay = () => {
                   playsInline 
                   className={`absolute inset-0 w-full h-full object-cover z-0 ${callType === 'VOICE' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`} 
                />
-
-               <div className={`flex-1 relative bg-black/20 flex items-center justify-center overflow-hidden ${callType === 'VIDEO' ? 'absolute inset-0' : ''}`}>
+               {/* Video Streams / Voice HUD */}
+               <div className="flex-1 relative bg-black/20 flex items-center justify-center overflow-hidden">
                   {callType === 'VIDEO' ? (
                      <>
                         <video 
@@ -215,7 +215,7 @@ const CallOverlay = () => {
                         />
                      </>
                   ) : (
-                     <div className="flex flex-col items-center gap-6 md:gap-8 px-6 text-center">
+                     <div className="flex flex-col items-center gap-6 md:gap-8 px-6 text-center z-10">
                         <div className="w-24 h-24 md:w-48 md:h-48 rounded-full bg-cyan-500/10 border-2 md:border-4 border-cyan-400/30 flex items-center justify-center animate-pulse overflow-hidden">
                            {remoteUser?.profilePic ? (
                               <img src={remoteUser.profilePic} className="w-full h-full object-cover" alt="caller" />
@@ -235,6 +235,7 @@ const CallOverlay = () => {
 
                {callState === 'RECEIVING' && (
                   <div className="absolute inset-0 bg-[#050505]/95 backdrop-blur-3xl flex flex-col items-center justify-center z-50 p-6">
+                     {/* Pinging background - must be pointer-events-none */}
                      <div className="w-32 h-32 md:w-48 md:h-48 rounded-full bg-cyan-400 animate-ping absolute opacity-10 pointer-events-none" />
                      
                      <div className="w-24 h-24 md:w-40 md:h-40 rounded-[2rem] md:rounded-[3rem] bg-white/5 border border-white/10 overflow-hidden relative shadow-[0_0_50px_rgba(0,242,255,0.2)] mb-8">
@@ -267,7 +268,8 @@ const CallOverlay = () => {
                   </div>
                )}
 
-               <div className="p-6 md:p-10 flex items-center justify-center gap-4 md:gap-8 bg-black/60 border-t border-white/5 pb-12 md:pb-10 flex-wrap">
+               {/* Controls */}
+               <div className="p-6 md:p-10 flex items-center justify-center gap-4 md:gap-8 bg-black/60 border-t border-white/5 pb-12 md:pb-10 flex-wrap relative z-[100]">
                   <button 
                      onClick={() => {
                         const audioTrack = localStreamRef.current?.getAudioTracks()[0];
