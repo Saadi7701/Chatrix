@@ -35,13 +35,17 @@ const CallOverlay = () => {
    const callStartTimeRef = useRef<number | null>(null);
 
    useEffect(() => {
-      // 1-on-1 Call Listeners
+      // Incoming Signal Listener (Shared for 1-on-1 and Group Mesh)
       socket.on('incoming_call', async ({ offer, from, type, username, profilePic }) => {
-         setRemoteUser({ id: from, username, profilePic });
-         setCallType(type);
-         setCallState('RECEIVING');
-         setIsGroupCall(false);
+         // Only treat as a NEW incoming call UI if we are IDLE
+         if (callState === 'IDLE') {
+            setRemoteUser({ id: from, username, profilePic });
+            setCallType(type);
+            setCallState('RECEIVING');
+            setIsGroupCall(false);
+         }
          
+         // Always handle the signaling part
          const pc = createPeerConnection(from);
          await pc.setRemoteDescription(new RTCSessionDescription(offer));
          const answer = await pc.createAnswer();
@@ -49,12 +53,14 @@ const CallOverlay = () => {
          socket.emit('answer_call', { answer, to: from });
       });
 
-      socket.on('call_answered', async ({ answer }) => {
-         const pc = Object.values(pcsRef.current)[0];
+      socket.on('call_answered', async ({ answer, from }) => {
+         const pc = pcsRef.current[from] || Object.values(pcsRef.current)[0];
          if (pc) {
             await pc.setRemoteDescription(new RTCSessionDescription(answer));
-            setCallState('ACTIVE');
-            callStartTimeRef.current = Date.now();
+            if (callState !== 'ACTIVE') {
+               setCallState('ACTIVE');
+               callStartTimeRef.current = Date.now();
+            }
          }
       });
 

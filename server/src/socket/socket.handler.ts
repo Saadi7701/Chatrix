@@ -158,14 +158,23 @@ export const setupSocket = (io: Server) => {
 
     socket.on('answer_call', ({ answer, to }) => {
       console.log(`[socket]: Call answered for user ${to}`);
+      // Find who is answering
+      let fromUserId = '';
+      for (const [uid, sid] of Object.entries(userSocketMap)) {
+         if (sid === socket.id) { fromUserId = uid; break; }
+      }
       if (userSocketMap[to]) {
-        io.to(to).emit('call_answered', { answer });
+        io.to(to).emit('call_answered', { answer, from: fromUserId });
       }
     });
 
     socket.on('ice_candidate', ({ candidate, to }) => {
+      let fromUserId = '';
+      for (const [uid, sid] of Object.entries(userSocketMap)) {
+         if (sid === socket.id) { fromUserId = uid; break; }
+      }
       if (userSocketMap[to]) {
-        io.to(to).emit('ice_candidate', { candidate, from: socket.id });
+        io.to(to).emit('ice_candidate', { candidate, from: fromUserId });
       }
     });
 
