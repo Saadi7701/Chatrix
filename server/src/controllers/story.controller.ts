@@ -22,10 +22,35 @@ export const createStory = async (req: Request, res: Response) => {
 };
 
 export const getStories = async (req: Request, res: Response) => {
+  const userId = (req as any).userId;
+
   try {
+    // Find all unique users the current user has exchanged messages with
+    const messagedUsers = await prisma.message.findMany({
+      where: {
+        OR: [
+          { senderId: userId },
+          { receiverId: userId }
+        ]
+      },
+      select: {
+        senderId: true,
+        receiverId: true
+      }
+    });
+
+    const contactIds = new Set<string>();
+    contactIds.add(userId); // Always show own stories
+
+    messagedUsers.forEach(msg => {
+      if (msg.senderId) contactIds.add(msg.senderId);
+      if (msg.receiverId) contactIds.add(msg.receiverId);
+    });
+
     const stories = await prisma.story.findMany({
       where: {
-        expiresAt: { gt: new Date() }
+        expiresAt: { gt: new Date() },
+        userId: { in: Array.from(contactIds) }
       },
       include: {
         user: {
@@ -37,6 +62,7 @@ export const getStories = async (req: Request, res: Response) => {
     });
     res.status(200).json(stories);
   } catch (error) {
+    console.error('Error fetching stories:', error);
     res.status(500).json({ message: 'Error fetching stories' });
   }
 };
