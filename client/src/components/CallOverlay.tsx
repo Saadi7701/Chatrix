@@ -126,21 +126,28 @@ const CallOverlay = () => {
       return pc;
    };
 
-   const startCall = async (targetUser: any, type: 'VOICE' | 'VIDEO') => {
+   const startCall = async (target: any, type: 'VOICE' | 'VIDEO', isGroup: boolean = false) => {
       try {
          const stream = await navigator.mediaDevices.getUserMedia({ video: type === 'VIDEO', audio: true });
          localStreamRef.current = stream;
          if (localVideoRef.current) localVideoRef.current.srcObject = stream;
          
-         setRemoteUser(targetUser);
          setCallType(type);
          setCallState('RINGING');
-         
-         const pc = createPeerConnection(targetUser.id);
-         stream.getTracks().forEach(track => pc.addTrack(track, stream));
-         const offer = await pc.createOffer();
-         await pc.setLocalDescription(offer);
-         socket.emit('call_user', { offer, to: targetUser.id, from: user?.id, type });
+         setIsGroupCall(isGroup);
+
+         if (isGroup) {
+            setGroupId(target.id);
+            setRemoteUser({ username: target.name, profilePic: target.icon });
+            // For group calls, we don't create a PC yet - we wait for node_joined_call
+         } else {
+            setRemoteUser(target);
+            const pc = createPeerConnection(target.id);
+            stream.getTracks().forEach(track => pc.addTrack(track, stream));
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            socket.emit('call_user', { offer, to: target.id, from: user?.id, type });
+         }
       } catch (err) { setCallState('IDLE'); }
    };
 

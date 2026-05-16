@@ -565,6 +565,8 @@ const ChatPage = () => {
                       onClick={() => {
                         if (activeConversation.members) {
                            socket.emit('start_collective_call', { groupId: activeConversation.id, type: 'VIDEO', callerId: user?.id });
+                           // Trigger local HUD
+                           (window as any).startNeuralCall?.(activeConversation, 'VIDEO', true);
                            setSystemMsg('BROADCASTING COLLECTIVE SIGNAL...');
                            setTimeout(() => setSystemMsg(''), 3000);
                         } else {
@@ -577,6 +579,8 @@ const ChatPage = () => {
                       onClick={() => {
                         if (activeConversation.members) {
                            socket.emit('start_collective_call', { groupId: activeConversation.id, type: 'VOICE', callerId: user?.id });
+                           // Trigger local HUD
+                           (window as any).startNeuralCall?.(activeConversation, 'VOICE', true);
                            setSystemMsg('BROADCASTING COLLECTIVE SIGNAL...');
                            setTimeout(() => setSystemMsg(''), 3000);
                         } else {
