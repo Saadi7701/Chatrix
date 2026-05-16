@@ -72,10 +72,15 @@ export const login = async (req: Request, res: Response) => {
 };
 
 export const searchUser = async (req: Request, res: Response) => {
-  const code = req.params.code as string;
+  const query = req.params.code as string;
   try {
-    const user = await prisma.user.findUnique({
-      where: { userCode: code },
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { userCode: query },
+          { username: { equals: query, mode: 'insensitive' } }
+        ]
+      },
       select: {
         id: true,
         username: true,

@@ -319,7 +319,7 @@ const ChatPage = () => {
                 type="text" 
                 value={searchCode}
                 onChange={(e) => setSearchCode(e.target.value)}
-                placeholder={isStealth ? "Enter Stealth Code..." : "Search unique code..."} 
+                placeholder={isStealth ? "Enter Stealth Code..." : "Username or Code..."} 
                 className="bg-transparent border-none outline-none text-sm w-full placeholder:text-gray-600"
               />
             </div>
