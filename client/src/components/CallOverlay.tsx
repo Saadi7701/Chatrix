@@ -204,8 +204,8 @@ const CallOverlay = () => {
                         {isVideoOff && <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center"><User className="text-gray-600" size={40} /></div>}
                      </div>
                      <div className="absolute bottom-4 left-4 px-3 py-1 bg-black/40 backdrop-blur-md rounded-full border border-white/10 flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-                        <p className="text-[10px] font-black text-white uppercase tracking-widest">You {isMuted && '(Muted)'}</p>
+                        <Shield className="w-3 h-3 text-cyan-400" />
+                        <p className="text-[10px] font-black text-white uppercase tracking-widest">Local Node: {connStatus}</p>
                      </div>
                   </div>
 
