@@ -53,6 +53,7 @@ const ChatPage = () => {
     if (!token) return;
 
     const handleReceiveMessage = (message: any) => {
+      // 1. Update messages if we are in this chat
       const currentChat = activeConversationRef.current;
       if (currentChat?.id === message.senderId || currentChat?.id === message.receiverId) {
         addMessage(message);
@@ -64,6 +65,30 @@ const ChatPage = () => {
           });
         }
       }
+
+      // 2. Update the contact list (Sidebar)
+      setContacts(prev => {
+        const senderId = message.senderId === user?.id ? message.receiverId : message.senderId;
+        const exists = prev.find(c => c.id === senderId);
+
+        if (exists) {
+          // Move existing contact to top and update last message
+          const updated = prev.filter(c => c.id !== senderId);
+          return [{ ...exists, lastMessage: message }, ...updated];
+        } else if (message.sender) {
+          // New contact - add to top
+          const newContact = {
+            id: message.sender.id,
+            username: message.sender.username,
+            profilePic: message.sender.profilePic,
+            userCode: message.sender.userCode,
+            isOnline: true,
+            lastMessage: message
+          };
+          return [newContact, ...prev];
+        }
+        return prev;
+      });
     };
 
     const handleMessageRead = ({ messageId }: any) => {

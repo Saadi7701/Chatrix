@@ -79,8 +79,10 @@ export const setupSocket = (io: Server) => {
         include: {
           sender: {
             select: {
+              id: true,
               username: true,
-              profilePic: true
+              profilePic: true,
+              userCode: true
             }
           }
         }
