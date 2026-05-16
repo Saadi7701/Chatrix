@@ -8,7 +8,6 @@ import authRoutes from './routes/auth';
 import chatRoutes from './routes/chat';
 import storyRoutes from './routes/story';
 import uploadRoutes from './routes/upload';
-import groupRoutes from './routes/group';
 import { setupSocket } from './socket/socket.handler';
 import prisma from './config/prisma';
 
@@ -54,11 +53,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-app.use((req, res, next) => {
-  (req as any).io = io;
-  next();
-});
-
 // Routes
 app.get('/', (req, res) => {
   res.status(200).send('API is running perfectly! Database connection may be pending.');
@@ -67,7 +61,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/stories', storyRoutes);
 app.use('/api/upload', uploadRoutes);
-app.use('/api/groups', groupRoutes);
 
 // Socket Handler
 setupSocket(io);

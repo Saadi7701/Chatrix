@@ -17,13 +17,6 @@ export const setupSocket = (io: Server) => {
         where: { id: userId },
         data: { isOnline: true, lastSeen: new Date() }
       });
-
-      // Join rooms for all groups the user is in
-      const memberships = await prisma.groupMember.findMany({ where: { userId } });
-      memberships.forEach(m => {
-        socket.join(`group_${m.groupId}`);
-        console.log(`[socket]: User ${userId} joined room group_${m.groupId}`);
-      });
       
       // 1. Find all messages sent to this user while they were offline
       const pendingMessages = await prisma.message.findMany({
@@ -61,33 +54,8 @@ export const setupSocket = (io: Server) => {
 
       // Handle messages
       socket.on('send_message', async (data) => {
-        const { receiverId, groupId, content, senderId, type = 'TEXT' } = data;
+        const { receiverId, content, senderId, type = 'TEXT' } = data;
         
-        if (groupId) {
-          // GROUP MESSAGE LOGIC
-          const message = await prisma.message.create({
-            data: {
-              content,
-              senderId,
-              groupId,
-              type: type as any,
-              status: 'DELIVERED'
-            },
-            include: {
-              sender: {
-                select: {
-                  id: true,
-                  username: true,
-                  profilePic: true,
-                  userCode: true
-                }
-              }
-            }
-          });
-          io.to(`group_${groupId}`).emit('receive_message', message);
-          return;
-        }
-
         const receiverIsOnline = userSocketMap[receiverId] ? true : false;
   
         // Save to DB
@@ -158,52 +126,15 @@ export const setupSocket = (io: Server) => {
 
     socket.on('answer_call', ({ answer, to }) => {
       console.log(`[socket]: Call answered for user ${to}`);
-      // Find who is answering
-      let fromUserId = '';
-      for (const [uid, sid] of Object.entries(userSocketMap)) {
-         if (sid === socket.id) { fromUserId = uid; break; }
-      }
       if (userSocketMap[to]) {
-        io.to(to).emit('call_answered', { answer, from: fromUserId });
+        io.to(to).emit('call_answered', { answer });
       }
     });
 
     socket.on('ice_candidate', ({ candidate, to }) => {
-      let fromUserId = '';
-      for (const [uid, sid] of Object.entries(userSocketMap)) {
-         if (sid === socket.id) { fromUserId = uid; break; }
-      }
       if (userSocketMap[to]) {
-        io.to(to).emit('ice_candidate', { candidate, from: fromUserId });
+        io.to(to).emit('ice_candidate', { candidate });
       }
-    });
-
-    // --- COLLECTIVE (GROUP) CALLING PROTOCOL ---
-    socket.on('start_collective_call', async ({ groupId, type, callerId }) => {
-      const caller = await prisma.user.findUnique({
-        where: { id: callerId },
-        select: { username: true, profilePic: true }
-      });
-      console.log(`[socket]: Collective ${type} call initiated in ${groupId} by ${caller?.username}`);
-      
-      // Broadcast to everyone in the group room except the caller
-      socket.to(`group_${groupId}`).emit('collective_call_incoming', {
-        groupId,
-        type,
-        callerId,
-        callerName: caller?.username,
-        callerPic: caller?.profilePic
-      });
-    });
-
-    socket.on('join_collective_call', ({ groupId, userId }) => {
-       console.log(`[socket]: Node ${userId} joined collective call ${groupId}`);
-       socket.to(`group_${groupId}`).emit('node_joined_call', { userId });
-    });
-
-    socket.on('leave_collective_call', ({ groupId, userId }) => {
-       console.log(`[socket]: Node ${userId} left collective call ${groupId}`);
-       socket.to(`group_${groupId}`).emit('node_left_call', { userId });
     });
 
     socket.on('end_call', async ({ to, from, duration, status, type }) => {
