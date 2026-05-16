@@ -137,7 +137,26 @@ export const setupSocket = (io: Server) => {
       }
     });
 
-    socket.on('end_call', ({ to }) => {
+    socket.on('end_call', async ({ to, from, duration, status, type }) => {
+      console.log(`[socket]: Call ended between ${from} and ${to} - Status: ${status}`);
+      
+      // Save call log to DB
+      if (from && to) {
+        try {
+          await prisma.call.create({
+            data: {
+              callerId: from,
+              receiverId: to,
+              type: type || 'VOICE',
+              status: status || 'COMPLETED',
+              duration: duration || 0
+            }
+          });
+        } catch (err) {
+          console.error('Error saving call log:', err);
+        }
+      }
+
       if (userSocketMap[to]) {
         io.to(to).emit('call_ended');
       }

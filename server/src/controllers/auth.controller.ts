@@ -261,6 +261,33 @@ export const sendMessage = async (req: Request, res: Response) => {
   }
 };
 
+export const getCalls = async (req: Request, res: Response) => {
+  const userId = (req as any).userId;
+
+  try {
+    const calls = await prisma.call.findMany({
+      where: {
+        OR: [
+          { callerId: userId },
+          { receiverId: userId }
+        ]
+      },
+      include: {
+        caller: {
+          select: { username: true, profilePic: true, userCode: true }
+        },
+        receiver: {
+          select: { username: true, profilePic: true, userCode: true }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.status(200).json(calls);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching call logs' });
+  }
+};
+
 export const checkUserCode = async (req: Request, res: Response) => {
   try {
     const code = req.params.code as string;

@@ -32,6 +32,7 @@ const CallOverlay = () => {
    const localVideoRef = useRef<HTMLVideoElement>(null);
    const remoteVideoRef = useRef<HTMLVideoElement>(null);
    const pendingIceCandidates = useRef<RTCIceCandidateInit[]>([]);
+   const callStartTimeRef = useRef<number | null>(null);
 
    useEffect(() => {
       socket.on('incoming_call', async ({ offer, from, type, username, profilePic }) => {
@@ -52,6 +53,7 @@ const CallOverlay = () => {
          if (peerConnectionRef.current) {
             await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(answer));
             setCallState('ACTIVE');
+            callStartTimeRef.current = Date.now();
          }
       });
 
@@ -153,6 +155,7 @@ const CallOverlay = () => {
             await pc.setLocalDescription(answer);
             socket.emit('answer_call', { answer, to: remoteUser.id });
             setCallState('ACTIVE');
+            callStartTimeRef.current = Date.now();
          }
       } catch (err) {
          console.error('Permission denied', err);
@@ -170,11 +173,19 @@ const CallOverlay = () => {
       setCallState('IDLE');
       setRemoteUser(null);
       pendingIceCandidates.current = [];
+      callStartTimeRef.current = null;
    };
 
    const endCall = () => {
+      const duration = callStartTimeRef.current ? Math.floor((Date.now() - callStartTimeRef.current) / 1000) : 0;
       if (remoteUser) {
-         socket.emit('end_call', { to: remoteUser.id });
+         socket.emit('end_call', { 
+            to: remoteUser.id, 
+            from: user?.id,
+            duration,
+            type: callType,
+            status: callStartTimeRef.current ? 'COMPLETED' : 'MISSED'
+         });
       }
       endCallLocal();
    };

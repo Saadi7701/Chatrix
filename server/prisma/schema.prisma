@@ -42,6 +42,10 @@ model User {
   
   // Stories
   stories       Story[]
+  
+  // Calls
+  callsSent     Call[] @relation("CallsSent")
+  callsReceived Call[] @relation("CallsReceived")
 
   // AI Assistant
   aiAssistant   AIAssistant?
@@ -232,4 +236,18 @@ model Reaction {
   messageId String
   message   Message @relation(fields: [messageId], references: [id])
   userId    String
+}
+
+model Call {
+  id          String   @id @default(uuid())
+  callerId    String
+  caller      User     @relation("CallsSent", fields: [callerId], references: [id])
+  receiverId  String
+  receiver    User     @relation("CallsReceived", fields: [receiverId], references: [id])
+  type        String   // VOICE, VIDEO
+  status      String   // COMPLETED, MISSED, REJECTED
+  startTime   DateTime @default(now())
+  endTime     DateTime?
+  duration    Int?     // in seconds
+  createdAt   DateTime @default(now())
 }
