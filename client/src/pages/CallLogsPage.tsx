@@ -45,18 +45,18 @@ const CallLogsPage = () => {
       <div className="flex-1 flex flex-col p-6 md:p-12 bg-[#050505]">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
           <div>
-            <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter mb-2">Quantum Calls</h1>
-            <p className="text-[10px] font-black tracking-[0.4em] text-cyan-400 uppercase">Neural Frequency Logs</p>
+            <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter mb-2">My Calls</h1>
+            <p className="text-[10px] font-black tracking-[0.4em] text-violet-400 uppercase">Your call history</p>
           </div>
 
           <div className="relative group w-full md:w-80">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-cyan-400 transition-colors" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 group-focus-within:text-violet-400 transition-colors" />
             <input 
               type="text" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search Transmissions..." 
-              className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-xs text-white outline-none focus:border-cyan-500 transition-all shadow-inner"
+              placeholder="Search people..." 
+              className="w-full bg-white/[0.03] border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-xs text-white outline-none focus:border-violet-500 transition-all shadow-inner"
             />
           </div>
         </div>
@@ -64,7 +64,7 @@ const CallLogsPage = () => {
         <div className="space-y-4">
           {loading ? (
             <div className="flex justify-center p-12">
-              <div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+              <div className="w-8 h-8 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
             </div>
           ) : filteredCalls.map((call, i) => {
             const isOutgoing = call.callerId === user?.id;
@@ -78,7 +78,7 @@ const CallLogsPage = () => {
                 <div className="flex items-center gap-4 md:gap-6 min-w-0">
                   <div className={`
                     w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center border transition-all
-                    ${call.status === 'MISSED' ? 'bg-red-500/10 border-red-500/20 text-red-500' : 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400'}
+                    ${call.status === 'MISSED' ? 'bg-red-500/10 border-red-500/20 text-red-500' : 'bg-violet-500/10 border-violet-500/20 text-violet-400'}
                   `}>
                     {call.type === 'VIDEO' ? <Video className="w-5 h-5 md:w-7 md:h-7" /> : <Phone className="w-5 h-5 md:w-7 md:h-7" />}
                   </div>
@@ -105,7 +105,7 @@ const CallLogsPage = () => {
                   </div>
                   <button 
                     onClick={() => (window as any).startNeuralCall?.(otherUser, call.type)}
-                    className="p-3 md:p-4 rounded-2xl bg-white/5 hover:bg-cyan-400 hover:text-black transition-all border border-white/5 shadow-lg group"
+                    className="p-3 md:p-4 rounded-2xl bg-white/5 hover:bg-violet-400 hover:text-black transition-all border border-white/5 shadow-lg group"
                   >
                      <Zap className="w-4 h-4 md:w-5 md:h-5 group-hover:fill-current" />
                   </button>

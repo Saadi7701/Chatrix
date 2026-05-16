@@ -72,8 +72,8 @@ const AuthPage = () => {
     <div className="min-h-screen bg-[#050505] text-white flex items-center justify-center p-4 overflow-hidden relative font-sans">
       {/* Background Decor */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none opacity-20">
-         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyan-500/20 rounded-full blur-[120px] animate-pulse" />
-         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-500/20 rounded-full blur-[120px] animate-pulse" />
+         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-violet-500/20 rounded-full blur-[120px] animate-pulse" />
+         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-fuchsia-500/20 rounded-full blur-[120px] animate-pulse" />
          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
       </div>
 
@@ -83,14 +83,14 @@ const AuthPage = () => {
         className="w-full max-w-md z-10"
       >
         <div className="bg-[#0b141a]/80 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] p-10 shadow-2xl relative">
-          <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-24 h-24 bg-gradient-to-br from-cyan-400 to-purple-600 rounded-3xl flex items-center justify-center shadow-[0_0_50px_rgba(0,242,255,0.3)] border-4 border-[#050505]">
-             <Cpu className="w-12 h-12 text-black" />
+          <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-24 h-24 bg-gradient-to-br from-violet-400 to-fuchsia-600 rounded-3xl flex items-center justify-center shadow-[0_0_50px_rgba(139,92,246,0.3)] border-4 border-[#0a0a14]">
+             <Zap className="w-12 h-12 text-white" />
           </div>
 
           <div className="text-center mt-12 mb-10">
-            <h1 className="text-4xl font-black tracking-tighter mb-2">AURA ELITE</h1>
+            <h1 className="text-4xl font-black tracking-tighter mb-2">CHATRIX</h1>
             <p className="text-gray-500 text-[10px] font-black tracking-[0.3em] uppercase">
-              {isRegister ? 'Initialize Neural Identity' : 'Secure Protocol Login'}
+              {isRegister ? 'Join the Chatrix Club' : 'Welcome Back, Friend'}
             </p>
           </div>
 
@@ -106,13 +106,13 @@ const AuthPage = () => {
                 >
                   <div className="space-y-4">
                     <div className="relative group">
-                      <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-cyan-400 transition-colors" />
+                      <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-violet-400 transition-colors" />
                       <input 
                         type="text" 
-                        placeholder="Full Name" 
+                        placeholder="Your Name" 
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm focus:border-cyan-400 outline-none transition-all"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm focus:border-violet-400 outline-none transition-all"
                         required 
                       />
                     </div>
@@ -123,7 +123,7 @@ const AuthPage = () => {
                         placeholder="Unique Username" 
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm focus:border-cyan-400 outline-none transition-all"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm focus:border-violet-400 outline-none transition-all"
                         required 
                       />
                     </div>
@@ -134,7 +134,7 @@ const AuthPage = () => {
                         placeholder="Security Key (Password)" 
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm focus:border-cyan-400 outline-none transition-all"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm focus:border-violet-400 outline-none transition-all"
                         required 
                       />
                     </div>
@@ -205,13 +205,13 @@ const AuthPage = () => {
             <button 
               type="submit" 
               disabled={loading}
-              className="w-full bg-gradient-to-r from-cyan-400 to-cyan-600 text-black font-black py-4 rounded-2xl shadow-[0_0_30px_rgba(0,242,255,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 group"
+              className="w-full bg-gradient-to-r from-violet-400 to-violet-600 text-white font-black py-4 rounded-2xl shadow-[0_0_30px_rgba(139,92,246,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 group"
             >
               {loading ? (
-                <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
-                  <span className="tracking-[0.2em]">{isRegister ? 'INITIALIZE CORE' : 'ESTABLISH LINK'}</span>
+                  <span className="tracking-[0.2em]">{isRegister ? 'START CHATTING' : 'GO TO HUB'}</span>
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </>
               )}

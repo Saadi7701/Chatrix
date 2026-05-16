@@ -304,8 +304,8 @@ const ChatPage = () => {
         `}>
           <div className="p-6 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-black text-white">Neural Hub</h2>
-              {isStealth && <EyeOff className="w-4 h-4 text-gray-700 animate-pulse" />}
+              <h2 className="text-2xl font-black text-white">Chat Lounge</h2>
+              {isStealth && <EyeOff className="w-4 h-4 text-violet-400 animate-pulse" />}
             </div>
             <button className="p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-all">
               <Edit3 className="w-5 h-5 text-gray-400" />
@@ -319,7 +319,7 @@ const ChatPage = () => {
                 type="text" 
                 value={searchCode}
                 onChange={(e) => setSearchCode(e.target.value)}
-                placeholder={isStealth ? "Enter Stealth Code..." : "Username or Code..."} 
+                placeholder={isStealth ? "Enter Secret Key..." : "Who's on your mind?..."} 
                 className="bg-transparent border-none outline-none text-sm w-full placeholder:text-gray-600"
               />
             </div>
@@ -352,15 +352,15 @@ const ChatPage = () => {
                 } else if (searchCode.length > 0) {
                   return (
                     <div className="p-12 text-center">
-                       <p className="text-[10px] font-black text-cyan-400 tracking-widest uppercase mb-4">No Contact Found</p>
-                       <p className="text-[8px] text-gray-500 uppercase tracking-widest">Press Enter to search global system for code: "{searchCode}"</p>
+                       <p className="text-[10px] font-black text-violet-400 tracking-widest uppercase mb-4">Finding New Friend...</p>
+                       <p className="text-[8px] text-gray-500 uppercase tracking-widest">Press Enter to find user by code: "{searchCode}"</p>
                     </div>
                   );
                 } else {
                   return (
                     <div className="p-12 text-center opacity-20">
                        <Cpu className="w-12 h-12 text-gray-700 mx-auto mb-4" />
-                       <p className="text-[10px] font-black tracking-widest uppercase">No Active Nodes</p>
+                       <p className="text-[10px] font-black tracking-widest uppercase">No chats yet</p>
                     </div>
                   );
                 }
@@ -395,18 +395,18 @@ const ChatPage = () => {
                       <img src={activeConversation.profilePic || `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${activeConversation.username}`} alt="avatar" />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="font-black text-white text-base md:text-lg tracking-tight truncate group-hover:text-cyan-400 transition-colors">{activeConversation.username}</h3>
-                      <span className={`text-[8px] md:text-[9px] font-black tracking-widest uppercase ${activeConversation.isOnline ? 'text-cyan-400' : 'text-gray-600'}`}>
-                        {activeConversation.isOnline ? 'SYNCED' : 'OFFLINE'}
+                      <h3 className="font-black text-white text-base md:text-lg tracking-tight truncate group-hover:text-violet-400 transition-colors">{activeConversation.username}</h3>
+                      <span className={`text-[8px] md:text-[9px] font-black tracking-widest uppercase ${activeConversation.isOnline ? 'text-violet-400' : 'text-gray-600'}`}>
+                        {activeConversation.isOnline ? 'ACTIVE' : 'OFFLINE'}
                       </span>
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 md:gap-6 text-gray-500">
                   {user?.quantumEncryption && (
-                    <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20">
-                      <Shield className="w-3 h-3 text-cyan-400" />
-                      <span className="text-[8px] font-black text-cyan-400 tracking-widest uppercase">Quantum Secured</span>
+                    <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20">
+                      <Shield className="w-3 h-3 text-violet-400" />
+                      <span className="text-[8px] font-black text-violet-400 tracking-widest uppercase">Encrypted</span>
                     </div>
                   )}
                   <Video 
@@ -446,7 +446,7 @@ const ChatPage = () => {
 
                       <div className="space-y-2 mb-8">
                          <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter uppercase">{activeConversation.fullName || activeConversation.username}</h2>
-                         <p className="text-[10px] md:text-xs font-black text-cyan-400 tracking-[0.4em] uppercase">Neural Identity Locked</p>
+                         <p className="text-[10px] md:text-xs font-black text-violet-400 tracking-[0.4em] uppercase">Verified Friend</p>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-md mb-8">
@@ -465,9 +465,9 @@ const ChatPage = () => {
                       <div className="flex gap-4">
                          <button 
                             onClick={() => (window as any).startNeuralCall?.(activeConversation, 'VOICE')}
-                            className="px-8 py-4 rounded-2xl bg-cyan-500 text-black font-black text-[10px] tracking-widest uppercase shadow-[0_0_30px_rgba(0,242,255,0.3)] hover:scale-105 transition-all"
+                            className="px-8 py-4 rounded-2xl bg-violet-500 text-white font-black text-[10px] tracking-widest uppercase shadow-[0_0_30px_rgba(139,92,246,0.3)] hover:scale-105 transition-all"
                          >
-                            Initiate Voice Link
+                            Start a Call
                          </button>
                          <button className="px-8 py-4 rounded-2xl bg-white/5 text-white font-black text-[10px] tracking-widest uppercase border border-white/10 hover:bg-white/10 transition-all">
                             Secure Data Transfer
@@ -478,7 +478,7 @@ const ChatPage = () => {
                 </AnimatePresence>
 
                 {systemMsg && (
-                  <div className="mx-auto bg-cyan-500/10 border border-cyan-500/20 px-4 py-2 rounded-full text-[8px] md:text-[9px] font-black text-cyan-400 uppercase tracking-widest flex items-center gap-2">
+                  <div className="mx-auto bg-violet-500/10 border border-violet-500/20 px-4 py-2 rounded-full text-[8px] md:text-[9px] font-black text-violet-400 uppercase tracking-widest flex items-center gap-2">
                     <Sparkles className="w-3 h-3" /> {systemMsg}
                   </div>
                 )}
@@ -539,7 +539,7 @@ const ChatPage = () => {
                     value={inputText}
                     onChange={(e) => setInputText(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                    placeholder={!activeConversation.isOnline ? "Use </> Encapsulation..." : "Transmit thought..."} 
+                    placeholder="Type your message..." 
                     className="flex-1 bg-transparent border-none outline-none text-white text-sm md:text-base placeholder:text-gray-600 ml-1"
                   />
                   <button 
@@ -550,9 +550,9 @@ const ChatPage = () => {
                   </button>
                   <button 
                     onClick={handleSendMessage}
-                    className="bg-cyan-400 p-3 md:p-4 rounded-2xl shadow-[0_0_20px_rgba(0,242,255,0.4)] hover:scale-105 active:scale-95 transition-all flex-shrink-0"
+                    className="bg-violet-500 p-3 md:p-4 rounded-2xl shadow-[0_0_20px_rgba(139,92,246,0.4)] hover:scale-105 active:scale-95 transition-all flex-shrink-0"
                   >
-                    <Send className="w-4 h-4 md:w-5 md:h-5 text-black" />
+                    <Send className="w-4 h-4 md:w-5 md:h-5 text-white" />
                   </button>
                 </div>
               </div>
@@ -586,7 +586,7 @@ const ContactCard = ({ name, msg, status, active, onClick, pic, lastMessage }: a
     <div onClick={onClick} className={`p-4 md:p-6 flex items-center gap-4 cursor-pointer border-b border-white/5 transition-all ${active ? 'bg-cyan-500/5' : 'hover:bg-white/5'}`}>
       <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-white/5 overflow-hidden border border-white/10 flex-shrink-0 relative">
         <img src={pic || `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${name}`} alt="avatar" />
-        {status === 'Online' && <div className="absolute bottom-1 right-1 w-2 h-2 bg-cyan-400 rounded-full shadow-[0_0_5px_#00f2ff]" />}
+        {status === 'Online' && <div className="absolute bottom-1 right-1 w-2 h-2 bg-violet-400 rounded-full shadow-[0_0_5px_#8b5cf6]" />}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex justify-between items-baseline mb-0.5 md:mb-1">
@@ -654,7 +654,7 @@ const MessageBubble = ({ text, time, own, type, status }: any) => {
               {status === 'SENT' && <CheckCheck className="w-3 h-3 md:w-3.5 md:h-3.5 text-gray-700" />}
               {status === 'DELIVERED' && <CheckCheck className="w-3 h-3 md:w-3.5 md:h-3.5 text-gray-500" />}
               {status === 'SEEN' && (
-                <CheckCheck className="w-3 h-3 md:w-3.5 md:h-3.5 text-cyan-400 shadow-[0_0_10px_rgba(0,242,255,0.8)]" />
+                <CheckCheck className="w-3 h-3 md:w-3.5 md:h-3.5 text-violet-400 shadow-[0_0_10px_#8b5cf6]" />
               )}
             </div>
           )}

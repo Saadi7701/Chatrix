@@ -22,10 +22,10 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="flex flex-col md:flex-row h-screen bg-[#050505] text-white overflow-hidden font-sans">
       {/* Mobile Header */}
-      <div className="md:hidden flex items-center justify-between p-4 bg-[#0b141a] border-b border-white/5 z-50">
+      <div className="md:hidden flex items-center justify-between p-4 bg-[#0f0f1d] border-b border-white/5 z-50">
         <div className="flex items-center gap-3">
-          <Zap className="text-cyan-400 w-6 h-6" />
-          <span className="font-black tracking-tighter text-lg">AURA ELITE</span>
+          <Zap className="text-violet-400 w-6 h-6" />
+          <span className="font-black tracking-tighter text-lg">CHATRIX</span>
         </div>
         <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-gray-400">
           {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
@@ -40,8 +40,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       `}>
         {/* Logo Section */}
         <div className="py-8 hidden md:flex flex-col items-center">
-          <div className="w-12 h-12 rounded-2xl bg-cyan-400 flex items-center justify-center shadow-[0_0_30px_rgba(0,242,255,0.4)] hover:rotate-12 transition-all cursor-pointer">
-            <Zap className="text-black w-7 h-7" />
+          <div className="w-12 h-12 rounded-2xl bg-violet-500 flex items-center justify-center shadow-[0_0_30px_rgba(139,92,246,0.4)] hover:rotate-12 transition-all cursor-pointer">
+            <Zap className="text-white w-7 h-7" />
           </div>
         </div>
 
@@ -57,20 +57,20 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
                 className={`
                   p-4 rounded-2xl transition-all relative
                   ${location.pathname === item.path 
-                    ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shadow-[0_0_20px_rgba(0,242,255,0.1)]' 
+                    ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20 shadow-[0_0_20px_rgba(139,92,246,0.1)]' 
                     : 'text-gray-500 hover:bg-white/5 hover:text-white'}
                 `}
               >
                 {item.icon}
                 {location.pathname === item.path && (
-                  <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-cyan-400 rounded-full shadow-[0_0_10px_#00f2ff]" />
+                  <div className="absolute -right-1 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-violet-400 rounded-full shadow-[0_0_10px_#8b5cf6]" />
                 )}
               </button>
               
               {/* Tooltip / Popup Name */}
-              <div className="absolute left-full ml-4 px-3 py-2 bg-cyan-500 text-black text-[10px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 translate-x-[-10px] group-hover:translate-x-0 pointer-events-none transition-all z-50 whitespace-nowrap hidden md:block">
+              <div className="absolute left-full ml-4 px-3 py-2 bg-violet-500 text-white text-[10px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 translate-x-[-10px] group-hover:translate-x-0 pointer-events-none transition-all z-50 whitespace-nowrap hidden md:block">
                 {item.label}
-                <div className="absolute left-[-4px] top-1/2 -translate-y-1/2 border-y-[6px] border-y-transparent border-r-[6px] border-r-cyan-500" />
+                <div className="absolute left-[-4px] top-1/2 -translate-y-1/2 border-y-[6px] border-y-transparent border-r-[6px] border-r-violet-500" />
               </div>
 
               {/* Mobile Label */}
@@ -82,7 +82,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
         {/* Bottom Section */}
         <div className="py-8 flex flex-col items-center gap-8 w-full px-2">
           <div className="relative group w-full flex justify-center">
-            <button className="p-4 text-gray-600 hover:text-cyan-400 transition-all">
+            <button className="p-4 text-gray-600 hover:text-violet-400 transition-all">
               <Info size={24} />
             </button>
             <div className="absolute left-full ml-4 px-3 py-2 bg-white text-black text-[10px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 translate-x-[-10px] group-hover:translate-x-0 pointer-events-none transition-all z-50 whitespace-nowrap hidden md:block">

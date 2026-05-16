@@ -9,8 +9,8 @@ const LandingPage = () => {
   return (
     <div className="relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden bg-[#050505]">
       {/* Cinematic Ambient Glows */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyan-500/10 rounded-full blur-[120px] animate-pulse" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-500/10 rounded-full blur-[120px] animate-pulse" />
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-violet-500/10 rounded-full blur-[120px] animate-pulse" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-fuchsia-500/10 rounded-full blur-[120px] animate-pulse" />
 
       {/* Main Content Dashboard Container */}
       <motion.div 
@@ -26,8 +26,8 @@ const LandingPage = () => {
           transition={{ delay: 0.5 }}
           className="flex items-center gap-3 px-6 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-12"
         >
-          <div className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-          <span className="text-[10px] font-black tracking-[0.3em] uppercase text-cyan-400">System Online • v4.0.2</span>
+          <div className="w-2 h-2 rounded-full bg-violet-400 animate-ping" />
+          <span className="text-[10px] font-black tracking-[0.3em] uppercase text-violet-400">Join the Vibe • v4.0.2</span>
         </motion.div>
 
         {/* Centerpiece: Floating Button & Title */}
@@ -43,7 +43,7 @@ const LandingPage = () => {
             animate={{ opacity: 1, y: 0 }}
             className="text-6xl md:text-9xl font-black text-white tracking-tighter text-center mb-12 drop-shadow-[0_0_30px_rgba(255,255,255,0.2)]"
           >
-            AURA <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-white to-purple-500">ELITE</span>
+            CHA<span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-white to-fuchsia-500">TRIX</span>
           </motion.h1>
 
           <motion.div
@@ -52,13 +52,13 @@ const LandingPage = () => {
             className="relative group"
           >
             {/* Pulsing Outer Rings */}
-            <div className="absolute inset-0 bg-cyan-500/20 rounded-3xl blur-2xl group-hover:bg-cyan-500/40 transition-all animate-pulse" />
+            <div className="absolute inset-0 bg-violet-500/20 rounded-3xl blur-2xl group-hover:bg-violet-500/40 transition-all animate-pulse" />
             <Link 
               to="/auth"
-              className="relative flex items-center gap-4 px-12 py-6 bg-white text-black font-black text-xl rounded-3xl shadow-[0_20px_50px_rgba(0,242,255,0.3)] hover:shadow-[0_20px_80px_rgba(0,242,255,0.5)] transition-all overflow-hidden"
+              className="relative flex items-center gap-4 px-12 py-6 bg-white text-black font-black text-xl rounded-3xl shadow-[0_20px_50px_rgba(139,92,246,0.3)] hover:shadow-[0_20px_80px_rgba(139,92,246,0.5)] transition-all overflow-hidden"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-500/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-              INITIALIZE ACCESS
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-violet-500/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+              START CHATTING
               <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
             </Link>
           </motion.div>
@@ -68,24 +68,24 @@ const LandingPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full mt-12">
           <DashboardCard 
             icon={<MessageSquare />}
-            title="Neural Encryption"
-            value="99.9% Secure"
-            desc="Military-grade end-to-end encryption for every neural packet."
-            color="cyan"
+            title="Super Secure"
+            value="Encrypted"
+            desc="Every word you say is protected by high-level encryption."
+            color="violet"
           />
           <DashboardCard 
             icon={<Cpu />}
-            title="AI Core Engine"
+            title="Smart Vibes"
             value="Active"
-            desc="Personal AI assistant integrated directly into your chat workflow."
-            color="purple"
+            desc="A smooth experience designed for the best conversations."
+            color="fuchsia"
           />
           <DashboardCard 
             icon={<Shield />}
-            title="Quantum Stealth"
+            title="Private Mode"
             value="Enabled"
-            desc="Zero-trace messaging with self-destructing data protocols."
-            color="blue"
+            desc="Your chats are private and only for you and your friends."
+            color="indigo"
           />
         </div>
       </motion.div>
@@ -105,15 +105,15 @@ const LandingPage = () => {
 
 const DashboardCard = ({ icon, title, value, desc, color }: any) => {
   const colorMap: any = {
-    cyan: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
-    purple: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-    blue: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+    violet: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
+    fuchsia: 'bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/20',
+    indigo: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
   };
 
   const glowMap: any = {
-    cyan: 'bg-cyan-500/10 group-hover:bg-cyan-500/20',
-    purple: 'bg-purple-500/10 group-hover:bg-purple-500/20',
-    blue: 'bg-blue-500/10 group-hover:bg-blue-500/20',
+    violet: 'bg-violet-500/10 group-hover:bg-violet-500/20',
+    fuchsia: 'bg-fuchsia-500/10 group-hover:bg-fuchsia-500/20',
+    indigo: 'bg-indigo-500/10 group-hover:bg-indigo-500/20',
   };
 
   return (
