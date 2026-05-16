@@ -108,10 +108,26 @@ const ChatPage = () => {
       setTimeout(() => setSystemMsg(''), 5000);
     };
 
+    const handleCollectiveCreated = (group: any) => {
+       setContacts(prev => {
+          if (prev.find(c => c.id === group.id)) return prev;
+          return [group, ...prev];
+       });
+       setSystemMsg('NEW COLLECTIVE ESTABLISHED');
+       setTimeout(() => setSystemMsg(''), 3000);
+    };
+
+    const handleCollectiveCallIncoming = (data: any) => {
+       // Global function to show call overlay (assuming it exists or will be added)
+       (window as any).incomingCollectiveCall?.(data);
+    };
+
     socket.on('receive_message', handleReceiveMessage);
     socket.on('message_read', handleMessageRead);
     socket.on('message_delivered', handleMessageDelivered);
     socket.on('user_status_change', handleUserStatusChange);
+    socket.on('collective_created', handleCollectiveCreated);
+    socket.on('collective_call_incoming', handleCollectiveCallIncoming);
     socket.on('error', handleError);
 
     return () => {
@@ -119,6 +135,8 @@ const ChatPage = () => {
       socket.off('message_read', handleMessageRead);
       socket.off('message_delivered', handleMessageDelivered);
       socket.off('user_status_change', handleUserStatusChange);
+      socket.off('collective_created', handleCollectiveCreated);
+      socket.off('collective_call_incoming', handleCollectiveCallIncoming);
       socket.off('error', handleError);
     };
   }, [token, user]);
@@ -536,27 +554,39 @@ const ChatPage = () => {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 md:gap-6 text-gray-500">
-                  {user?.quantumEncryption && (
-                    <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20">
-                      <Shield className="w-3 h-3 text-cyan-400" />
-                      <span className="text-[8px] font-black text-cyan-400 tracking-widest uppercase">Quantum Secured</span>
-                    </div>
-                  )}
-                  {!activeConversation.members && (
-                    <>
-                      <Video 
-                        onClick={() => (window as any).startNeuralCall?.(activeConversation, 'VIDEO')}
-                        className="w-5 h-5 md:w-6 md:h-6 cursor-pointer hover:text-cyan-400 transition-colors" 
-                      />
-                      <Phone 
-                        onClick={() => (window as any).startNeuralCall?.(activeConversation, 'VOICE')}
-                        className="w-5 h-5 md:w-6 md:h-6 cursor-pointer hover:text-cyan-400 transition-colors" 
-                      />
-                    </>
-                  )}
-                  <MoreVertical className="w-5 h-5 md:w-6 md:h-6 cursor-pointer hover:text-white" />
-                </div>
+                  <div className="flex items-center gap-3 md:gap-6 text-gray-500">
+                    {user?.quantumEncryption && (
+                      <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20">
+                        <Shield className="w-3 h-3 text-cyan-400" />
+                        <span className="text-[8px] font-black text-cyan-400 tracking-widest uppercase">Quantum Secured</span>
+                      </div>
+                    )}
+                    <Video 
+                      onClick={() => {
+                        if (activeConversation.members) {
+                           socket.emit('start_collective_call', { groupId: activeConversation.id, type: 'VIDEO', callerId: user?.id });
+                           setSystemMsg('BROADCASTING COLLECTIVE SIGNAL...');
+                           setTimeout(() => setSystemMsg(''), 3000);
+                        } else {
+                           (window as any).startNeuralCall?.(activeConversation, 'VIDEO');
+                        }
+                      }}
+                      className="w-5 h-5 md:w-6 md:h-6 cursor-pointer hover:text-cyan-400 transition-colors" 
+                    />
+                    <Phone 
+                      onClick={() => {
+                        if (activeConversation.members) {
+                           socket.emit('start_collective_call', { groupId: activeConversation.id, type: 'VOICE', callerId: user?.id });
+                           setSystemMsg('BROADCASTING COLLECTIVE SIGNAL...');
+                           setTimeout(() => setSystemMsg(''), 3000);
+                        } else {
+                           (window as any).startNeuralCall?.(activeConversation, 'VOICE');
+                        }
+                      }}
+                      className="w-5 h-5 md:w-6 md:h-6 cursor-pointer hover:text-cyan-400 transition-colors" 
+                    />
+                    <MoreVertical className="w-5 h-5 md:w-6 md:h-6 cursor-pointer hover:text-white" />
+                  </div>
               </div>
 
               {/* Messages Grid */}
@@ -672,6 +702,9 @@ const ChatPage = () => {
                     type={msg.type}
                     time={new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     status={msg.status}
+                    senderName={msg.sender?.username}
+                    senderPic={msg.sender?.profilePic}
+                    isGroup={!!activeConversation.members}
                   />
                 ))}
                 <div ref={scrollRef} />
@@ -785,7 +818,7 @@ const ContactCard = ({ name, msg, status, active, onClick, pic, lastMessage }: a
   );
 };
 
-const MessageBubble = ({ text, time, own, type, status }: any) => {
+const MessageBubble = ({ text, time, own, type, status, senderName, senderPic, isGroup }: any) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -806,6 +839,12 @@ const MessageBubble = ({ text, time, own, type, status }: any) => {
         ${own ? 'bubble-out' : 'bubble-in'}
         shadow-xl backdrop-blur-sm
       `}>
+        {isGroup && !own && (
+           <div className="flex items-center gap-2 mb-2 pb-1 border-b border-white/5">
+              <img src={senderPic || `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${senderName}`} className="w-4 h-4 rounded-md" alt="" />
+              <span className="text-[8px] font-black text-cyan-400 uppercase tracking-widest">{senderName}</span>
+           </div>
+        )}
         {(type === 'TEXT' || !type) && <p className="text-sm md:text-[15px] leading-relaxed mb-1 md:mb-2">{text}</p>}
         {type === 'IMAGE' && <img src={text} className="rounded-xl md:rounded-2xl mb-2 max-h-60 md:max-h-80 w-full object-cover border border-white/10 shadow-lg" alt="media" />}
         {type === 'VIDEO' && <video src={text} controls className="rounded-xl md:rounded-2xl mb-2 max-h-60 md:max-h-80 w-full border border-white/10 shadow-lg" />}

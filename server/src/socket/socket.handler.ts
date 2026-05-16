@@ -165,8 +165,36 @@ export const setupSocket = (io: Server) => {
 
     socket.on('ice_candidate', ({ candidate, to }) => {
       if (userSocketMap[to]) {
-        io.to(to).emit('ice_candidate', { candidate });
+        io.to(to).emit('ice_candidate', { candidate, from: socket.id });
       }
+    });
+
+    // --- COLLECTIVE (GROUP) CALLING PROTOCOL ---
+    socket.on('start_collective_call', async ({ groupId, type, callerId }) => {
+      const caller = await prisma.user.findUnique({
+        where: { id: callerId },
+        select: { username: true, profilePic: true }
+      });
+      console.log(`[socket]: Collective ${type} call initiated in ${groupId} by ${caller?.username}`);
+      
+      // Broadcast to everyone in the group room except the caller
+      socket.to(`group_${groupId}`).emit('collective_call_incoming', {
+        groupId,
+        type,
+        callerId,
+        callerName: caller?.username,
+        callerPic: caller?.profilePic
+      });
+    });
+
+    socket.on('join_collective_call', ({ groupId, userId }) => {
+       console.log(`[socket]: Node ${userId} joined collective call ${groupId}`);
+       socket.to(`group_${groupId}`).emit('node_joined_call', { userId });
+    });
+
+    socket.on('leave_collective_call', ({ groupId, userId }) => {
+       console.log(`[socket]: Node ${userId} left collective call ${groupId}`);
+       socket.to(`group_${groupId}`).emit('node_left_call', { userId });
     });
 
     socket.on('end_call', async ({ to, from, duration, status, type }) => {

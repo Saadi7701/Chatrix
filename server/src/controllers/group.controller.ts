@@ -29,6 +29,14 @@ export const createGroup = async (req: Request, res: Response) => {
         }
       }
     });
+    // Emit to all online members that a new group was created
+    const io = (req as any).io;
+    memberIds.forEach((mId: string) => {
+       io.to(mId).emit('collective_created', group);
+    });
+    // Also emit to admin (creator)
+    io.to(adminId).emit('collective_created', group);
+
     res.status(201).json(group);
   } catch (error) {
     console.error('Error creating group:', error);

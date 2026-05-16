@@ -20,49 +20,67 @@ const CallOverlay = () => {
    const { user } = useAuthStore();
    const [callState, setCallState] = useState<'IDLE' | 'RINGING' | 'RECEIVING' | 'ACTIVE'>('IDLE');
    const [callType, setCallType] = useState<'VOICE' | 'VIDEO'>('VOICE');
-   const [remoteUser, setRemoteUser] = useState<any>(null);
+   const [remoteUser, setRemoteUser] = useState<any>(null); // For 1-on-1
+   const [isGroupCall, setIsGroupCall] = useState(false);
+   const [groupId, setGroupId] = useState<string | null>(null);
+   const [participants, setParticipants] = useState<any[]>([]); // [{id, username, stream, pc}]
+   
    const [isMuted, setIsMuted] = useState(false);
    const [isVideoOff, setIsVideoOff] = useState(false);
    const [isSpeakerOn, setIsSpeakerOn] = useState(true);
    const [connStatus, setConnStatus] = useState('INITIALIZING...');
 
    const localStreamRef = useRef<MediaStream | null>(null);
-   const remoteStreamRef = useRef<MediaStream | null>(null);
-   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
+   const pcsRef = useRef<{ [userId: string]: RTCPeerConnection }>({});
    const localVideoRef = useRef<HTMLVideoElement>(null);
-   const remoteVideoRef = useRef<HTMLVideoElement>(null);
-   const pendingIceCandidates = useRef<RTCIceCandidateInit[]>([]);
    const callStartTimeRef = useRef<number | null>(null);
 
    useEffect(() => {
+      // 1-on-1 Call Listeners
       socket.on('incoming_call', async ({ offer, from, type, username, profilePic }) => {
          setRemoteUser({ id: from, username, profilePic });
          setCallType(type);
          setCallState('RECEIVING');
+         setIsGroupCall(false);
          
          const pc = createPeerConnection(from);
          await pc.setRemoteDescription(new RTCSessionDescription(offer));
-         
-         while (pendingIceCandidates.current.length > 0) {
-            const candidate = pendingIceCandidates.current.shift();
-            if (candidate) await pc.addIceCandidate(new RTCIceCandidate(candidate));
-         }
+         const answer = await pc.createAnswer();
+         await pc.setLocalDescription(answer);
+         socket.emit('answer_call', { answer, to: from });
       });
 
       socket.on('call_answered', async ({ answer }) => {
-         if (peerConnectionRef.current) {
-            await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(answer));
+         const pc = Object.values(pcsRef.current)[0];
+         if (pc) {
+            await pc.setRemoteDescription(new RTCSessionDescription(answer));
             setCallState('ACTIVE');
             callStartTimeRef.current = Date.now();
          }
       });
 
-      socket.on('ice_candidate', async ({ candidate }) => {
-         if (peerConnectionRef.current && peerConnectionRef.current.remoteDescription) {
-            await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
-         } else {
-            pendingIceCandidates.current.push(candidate);
-         }
+      // Collective (Group) Call Listeners
+      socket.on('collective_call_incoming', ({ groupId, type, callerName, callerPic, callerId }) => {
+         setGroupId(groupId);
+         setCallType(type);
+         setIsGroupCall(true);
+         setRemoteUser({ id: callerId, username: callerName, profilePic: callerPic });
+         setCallState('RECEIVING');
+      });
+
+      socket.on('node_joined_call', async ({ userId }) => {
+         if (!localStreamRef.current) return;
+         // If a new person joins, we initiate a connection to them
+         const pc = createPeerConnection(userId);
+         localStreamRef.current.getTracks().forEach(track => pc.addTrack(track, localStreamRef.current!));
+         const offer = await pc.createOffer();
+         await pc.setLocalDescription(offer);
+         socket.emit('call_user', { offer, to: userId, from: user?.id, type: callType });
+      });
+
+      socket.on('ice_candidate', async ({ candidate, from }) => {
+         const pc = pcsRef.current[from] || Object.values(pcsRef.current)[0];
+         if (pc) await pc.addIceCandidate(new RTCIceCandidate(candidate));
       });
 
       socket.on('call_ended', () => {
@@ -72,31 +90,15 @@ const CallOverlay = () => {
       return () => {
          socket.off('incoming_call');
          socket.off('call_answered');
+         socket.off('collective_call_incoming');
+         socket.off('node_joined_call');
          socket.off('ice_candidate');
          socket.off('call_ended');
       };
-   }, []);
-
-   useEffect(() => {
-      if (remoteVideoRef.current) {
-         remoteVideoRef.current.volume = isSpeakerOn ? 1.0 : 0.2;
-      }
-   }, [isSpeakerOn]);
+   }, [user, callType]);
 
    const createPeerConnection = (targetUserId: string) => {
       const pc = new RTCPeerConnection(ICE_SERVERS);
-
-      pc.oniceconnectionstatechange = () => {
-         console.log('[ICE Status]:', pc.iceConnectionState);
-         switch(pc.iceConnectionState) {
-            case 'checking': setConnStatus('HANDSHAKING...'); break;
-            case 'connected': 
-            case 'completed': setConnStatus('LINK ESTABLISHED'); break;
-            case 'failed': setConnStatus('FIREWALL BLOCK'); break;
-            case 'disconnected': setConnStatus('LINK LOST'); break;
-            default: setConnStatus('SYNCING...');
-         }
-      };
 
       pc.onicecandidate = (event) => {
          if (event.candidate) {
@@ -105,228 +107,168 @@ const CallOverlay = () => {
       };
 
       pc.ontrack = (event) => {
-         console.log('Remote track received:', event.track.kind);
-         if (remoteVideoRef.current) {
-            remoteVideoRef.current.srcObject = event.streams[0];
-            remoteVideoRef.current.play().catch(err => console.error('Auto-play failed:', err));
-         }
-         remoteStreamRef.current = event.streams[0];
+         setParticipants(prev => {
+            if (prev.find(p => p.id === targetUserId)) return prev;
+            return [...prev, { id: targetUserId, stream: event.streams[0] }];
+         });
       };
 
-      peerConnectionRef.current = pc;
+      pcsRef.current[targetUserId] = pc;
       return pc;
    };
 
    const startCall = async (targetUser: any, type: 'VOICE' | 'VIDEO') => {
       try {
-         const stream = await navigator.mediaDevices.getUserMedia({
-            video: type === 'VIDEO',
-            audio: true,
-         });
+         const stream = await navigator.mediaDevices.getUserMedia({ video: type === 'VIDEO', audio: true });
+         localStreamRef.current = stream;
+         if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+         
          setRemoteUser(targetUser);
          setCallType(type);
          setCallState('RINGING');
-         localStreamRef.current = stream;
-         if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+         
          const pc = createPeerConnection(targetUser.id);
-         stream.getTracks().forEach((track) => pc.addTrack(track, stream));
+         stream.getTracks().forEach(track => pc.addTrack(track, stream));
          const offer = await pc.createOffer();
          await pc.setLocalDescription(offer);
          socket.emit('call_user', { offer, to: targetUser.id, from: user?.id, type });
-      } catch (err) {
-         console.error('Permission denied', err);
-         alert('PROTOCOL ERROR: Neural Link requires Microphone/Camera permissions. Please check your browser settings.');
-         setCallState('IDLE');
-      }
+      } catch (err) { setCallState('IDLE'); }
    };
 
    const answerCall = async () => {
       try {
-         const stream = await navigator.mediaDevices.getUserMedia({
-            video: callType === 'VIDEO',
-            audio: true,
-         });
+         const stream = await navigator.mediaDevices.getUserMedia({ video: callType === 'VIDEO', audio: true });
          localStreamRef.current = stream;
          if (localVideoRef.current) localVideoRef.current.srcObject = stream;
-         const pc = peerConnectionRef.current;
-         if (pc) {
-            stream.getTracks().forEach((track) => pc.addTrack(track, stream));
-            const answer = await pc.createAnswer();
-            await pc.setLocalDescription(answer);
-            socket.emit('answer_call', { answer, to: remoteUser.id });
+         
+         if (isGroupCall && groupId) {
+            socket.emit('join_collective_call', { groupId, userId: user?.id });
             setCallState('ACTIVE');
-            callStartTimeRef.current = Date.now();
+         } else {
+            // 1-on-1 logic already handled in incoming_call listener for signaling
+            setCallState('ACTIVE');
          }
-      } catch (err) {
-         console.error('Permission denied', err);
-         alert('LINK FAILED: Could not access hardware. Please allow microphone permissions.');
-         endCall();
-      }
+         callStartTimeRef.current = Date.now();
+      } catch (err) { endCall(); }
    };
 
    const endCallLocal = () => {
       localStreamRef.current?.getTracks().forEach(track => track.stop());
-      peerConnectionRef.current?.close();
-      peerConnectionRef.current = null;
+      Object.values(pcsRef.current).forEach(pc => pc.close());
+      pcsRef.current = {};
       localStreamRef.current = null;
-      remoteStreamRef.current = null;
+      setParticipants([]);
       setCallState('IDLE');
-      setRemoteUser(null);
-      pendingIceCandidates.current = [];
-      callStartTimeRef.current = null;
    };
 
    const endCall = () => {
-      const duration = callStartTimeRef.current ? Math.floor((Date.now() - callStartTimeRef.current) / 1000) : 0;
-      if (remoteUser) {
-         socket.emit('end_call', { 
-            to: remoteUser.id, 
-            from: user?.id,
-            duration,
-            type: callType,
-            status: callStartTimeRef.current ? 'COMPLETED' : 'MISSED'
-         });
+      if (isGroupCall && groupId) {
+         socket.emit('leave_collective_call', { groupId, userId: user?.id });
+      } else if (remoteUser) {
+         socket.emit('end_call', { to: remoteUser.id, from: user?.id });
       }
       endCallLocal();
    };
 
    useEffect(() => {
       (window as any).startNeuralCall = startCall;
-      return () => { delete (window as any).startNeuralCall; };
+      (window as any).incomingCollectiveCall = (data: any) => {
+         setGroupId(data.groupId);
+         setCallType(data.type);
+         setIsGroupCall(true);
+         setRemoteUser({ id: data.callerId, username: data.callerName, profilePic: data.callerPic });
+         setCallState('RECEIVING');
+      };
+      return () => { 
+         delete (window as any).startNeuralCall; 
+         delete (window as any).incomingCollectiveCall;
+      };
    }, [user]);
 
    if (callState === 'IDLE') return null;
 
    return (
       <AnimatePresence>
-         <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-3xl"
-         >
-            <div className="w-full h-full md:w-[90vw] md:h-[85vh] md:max-w-5xl bg-[#0b141a] md:rounded-[3rem] border-white/10 overflow-hidden relative shadow-2xl flex flex-col">
+         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-3xl">
+            <div className="w-full h-full md:w-[95vw] md:h-[90vh] bg-[#0b141a] md:rounded-[3rem] border border-white/10 overflow-hidden relative shadow-2xl flex flex-col">
                
-               <video 
-                  ref={remoteVideoRef as any} 
-                  autoPlay 
-                  playsInline 
-                  className={`absolute inset-0 w-full h-full object-cover z-0 ${callType === 'VOICE' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`} 
-               />
-               {/* Video Streams / Voice HUD */}
-               <div className="flex-1 relative bg-black/20 flex items-center justify-center overflow-hidden">
-                  {callType === 'VIDEO' ? (
-                     <>
-                        <video 
-                           ref={localVideoRef} 
-                           autoPlay 
-                           playsInline 
-                           muted 
-                           className="absolute top-4 right-4 w-24 md:w-48 aspect-[3/4] md:aspect-video rounded-xl md:rounded-2xl border border-white/20 object-cover shadow-2xl bg-black z-20" 
-                        />
-                     </>
-                  ) : (
-                     <div className="flex flex-col items-center gap-6 md:gap-8 px-6 text-center z-10">
-                        <div className="w-24 h-24 md:w-48 md:h-48 rounded-full bg-cyan-500/10 border-2 md:border-4 border-cyan-400/30 flex items-center justify-center animate-pulse overflow-hidden">
-                           {remoteUser?.profilePic ? (
-                              <img src={remoteUser.profilePic} className="w-full h-full object-cover" alt="caller" />
-                           ) : (
-                              <User className="w-12 h-12 md:w-24 md:h-24 text-cyan-400" />
-                           )}
+               {/* Participants Grid */}
+               <div className="flex-1 p-4 md:p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-fr overflow-y-auto custom-scrollbar">
+                  {/* Local Stream */}
+                  <div className="relative rounded-3xl overflow-hidden bg-black/40 border border-white/10 group">
+                     <video ref={localVideoRef} autoPlay playsInline muted className={`w-full h-full object-cover ${isVideoOff ? 'opacity-0' : 'opacity-100'}`} />
+                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        {isVideoOff && <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center"><User className="text-gray-600" size={40} /></div>}
+                     </div>
+                     <div className="absolute bottom-4 left-4 px-3 py-1 bg-black/40 backdrop-blur-md rounded-full border border-white/10">
+                        <p className="text-[10px] font-black text-white uppercase tracking-widest">You {isMuted && '(Muted)'}</p>
+                     </div>
+                  </div>
+
+                  {/* Remote Participants */}
+                  {participants.map((p) => (
+                     <div key={p.id} className="relative rounded-3xl overflow-hidden bg-black/40 border border-white/10">
+                        <RemoteVideo stream={p.stream} />
+                        <div className="absolute bottom-4 left-4 px-3 py-1 bg-black/40 backdrop-blur-md rounded-full border border-white/10">
+                           <p className="text-[10px] font-black text-cyan-400 uppercase tracking-widest">Node synchronized</p>
                         </div>
-                        <div className="space-y-2">
-                           <h2 className="text-xl md:text-4xl font-black text-white tracking-tighter uppercase">{remoteUser?.username || 'NEURAL LINK'}</h2>
-                           <p className={`text-[10px] md:text-sm font-black tracking-[0.4em] uppercase ${connStatus === 'FIREWALL BLOCK' ? 'text-red-500' : 'text-cyan-400'}`}>
-                              {callState === 'ACTIVE' ? connStatus : 'Establishing Synchronized Feed...'}
-                           </p>
+                     </div>
+                  ))}
+
+                  {/* Ringing/Waiting State */}
+                  {participants.length === 0 && callState !== 'RECEIVING' && (
+                     <div className="col-span-full flex flex-col items-center justify-center text-center space-y-6">
+                        <div className="w-32 h-32 rounded-full bg-cyan-500/10 border-2 border-cyan-400/20 flex items-center justify-center animate-pulse">
+                           <User size={60} className="text-cyan-400" />
                         </div>
+                        <h2 className="text-2xl font-black text-white tracking-tighter uppercase">Synchronizing Neural Network...</h2>
                      </div>
                   )}
                </div>
 
                {callState === 'RECEIVING' && (
                   <div className="absolute inset-0 bg-[#050505]/95 backdrop-blur-3xl flex flex-col items-center justify-center z-50 p-6">
-                     {/* Pinging background - must be pointer-events-none */}
-                     <div className="w-32 h-32 md:w-48 md:h-48 rounded-full bg-cyan-400 animate-ping absolute opacity-10 pointer-events-none" />
-                     
-                     <div className="w-24 h-24 md:w-40 md:h-40 rounded-[2rem] md:rounded-[3rem] bg-white/5 border border-white/10 overflow-hidden relative shadow-[0_0_50px_rgba(0,242,255,0.2)] mb-8">
+                     <div className="w-32 h-32 md:w-48 md:h-48 rounded-[2rem] md:rounded-[3rem] bg-white/5 border border-white/10 overflow-hidden relative shadow-[0_0_50px_rgba(0,242,255,0.2)] mb-8">
                         <img src={remoteUser?.profilePic || `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${remoteUser?.username}`} className="w-full h-full object-cover" alt="avatar" />
                      </div>
                      <h2 className="text-2xl md:text-4xl font-black text-white uppercase tracking-tighter mb-2">{remoteUser?.username}</h2>
-                     <p className="text-[10px] md:text-xs font-black text-cyan-400 tracking-[0.4em] uppercase mb-16 md:mb-24">Incoming Transmission...</p>
+                     <p className="text-[10px] md:text-xs font-black text-cyan-400 tracking-[0.4em] uppercase mb-16">
+                        {isGroupCall ? 'Collective Transmission Incoming...' : 'Incoming Transmission...'}
+                     </p>
                      
-                     <div className="flex gap-10 md:gap-16 relative z-[60]">
-                        <div className="flex flex-col items-center gap-4">
-                           <button 
-                              onClick={(e) => { e.stopPropagation(); answerCall(); }} 
-                              className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-green-500 flex items-center justify-center hover:scale-110 active:scale-90 transition-all shadow-[0_0_30px_rgba(34,197,94,0.4)] cursor-pointer touch-manipulation"
-                           >
-                              <Phone className="text-white w-7 h-7 md:w-9 md:h-9" />
-                           </button>
-                           <span className="text-[8px] font-black text-green-500 uppercase tracking-widest">Accept</span>
-                        </div>
-
-                        <div className="flex flex-col items-center gap-4">
-                           <button 
-                              onClick={(e) => { e.stopPropagation(); endCall(); }} 
-                              className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-red-500 flex items-center justify-center hover:scale-110 active:scale-90 transition-all shadow-[0_0_30px_rgba(239,68,68,0.4)] cursor-pointer touch-manipulation"
-                           >
-                              <PhoneOff className="text-white w-7 h-7 md:w-9 md:h-9" />
-                           </button>
-                           <span className="text-[8px] font-black text-red-500 uppercase tracking-widest">Decline</span>
-                        </div>
+                     <div className="flex gap-10 md:gap-16">
+                        <button onClick={answerCall} className="w-20 h-20 rounded-full bg-green-500 flex items-center justify-center hover:scale-110 active:scale-90 transition-all shadow-[0_0_30px_rgba(34,197,94,0.4)]"><Phone size={32} className="text-white" /></button>
+                        <button onClick={endCall} className="w-20 h-20 rounded-full bg-red-500 flex items-center justify-center hover:scale-110 active:scale-90 transition-all shadow-[0_0_30px_rgba(239,68,68,0.4)]"><PhoneOff size={32} className="text-white" /></button>
                      </div>
                   </div>
                )}
 
                {/* Controls */}
-               <div className="p-6 md:p-10 flex items-center justify-center gap-4 md:gap-8 bg-black/60 border-t border-white/5 pb-12 md:pb-10 flex-wrap relative z-[100]">
-                  <button 
-                     onClick={() => {
-                        const audioTrack = localStreamRef.current?.getAudioTracks()[0];
-                        if (audioTrack) {
-                           audioTrack.enabled = !audioTrack.enabled;
-                           setIsMuted(!audioTrack.enabled);
-                        }
-                     }}
-                     className={`p-4 md:p-5 rounded-2xl transition-all ${isMuted ? 'bg-red-500/20 text-red-500' : 'bg-white/5 text-white hover:bg-white/10'}`}
-                  >
-                     {isMuted ? <MicOff size={24} /> : <Mic size={24} />}
-                  </button>
+               <div className="p-6 md:p-10 flex items-center justify-center gap-4 md:gap-8 bg-black/60 border-t border-white/5 flex-wrap">
+                  <button onClick={() => {
+                     const track = localStreamRef.current?.getAudioTracks()[0];
+                     if (track) { track.enabled = !track.enabled; setIsMuted(!track.enabled); }
+                  }} className={`p-4 md:p-5 rounded-2xl transition-all ${isMuted ? 'bg-red-500/20 text-red-500' : 'bg-white/5 text-white hover:bg-white/10'}`}><Mic size={24} /></button>
 
-                  {callType === 'VIDEO' && (
-                     <button 
-                        onClick={() => {
-                           const videoTrack = localStreamRef.current?.getVideoTracks()[0];
-                           if (videoTrack) {
-                              videoTrack.enabled = !videoTrack.enabled;
-                              setIsVideoOff(!videoTrack.enabled);
-                           }
-                        }}
-                        className={`p-4 md:p-5 rounded-2xl transition-all ${isVideoOff ? 'bg-red-500/20 text-red-500' : 'bg-white/5 text-white hover:bg-white/10'}`}
-                     >
-                        {isVideoOff ? <VideoOff size={24} /> : <Video size={24} />}
-                     </button>
-                  )}
+                  <button onClick={() => {
+                     const track = localStreamRef.current?.getVideoTracks()[0];
+                     if (track) { track.enabled = !track.enabled; setIsVideoOff(!track.enabled); }
+                  }} className={`p-4 md:p-5 rounded-2xl transition-all ${isVideoOff ? 'bg-red-500/20 text-red-500' : 'bg-white/5 text-white hover:bg-white/10'}`}><Video size={24} /></button>
 
-                  <button 
-                     onClick={() => setIsSpeakerOn(!isSpeakerOn)}
-                     className={`p-4 md:p-5 rounded-2xl transition-all ${!isSpeakerOn ? 'bg-amber-500/20 text-amber-500' : 'bg-white/5 text-white hover:bg-white/10'}`}
-                  >
-                     {isSpeakerOn ? <Volume2 size={24} /> : <VolumeX size={24} />}
-                  </button>
-
-                  <button 
-                     onClick={endCall}
-                     className="p-5 md:p-6 rounded-2xl bg-red-500 text-white shadow-[0_0_30px_rgba(239,68,68,0.4)] hover:scale-110 active:scale-95 transition-all"
-                  >
-                     <PhoneOff size={28} />
-                  </button>
+                  <button onClick={endCall} className="p-5 md:p-6 rounded-2xl bg-red-500 text-white shadow-[0_0_30px_rgba(239,68,68,0.4)] hover:scale-110 active:scale-95 transition-all"><PhoneOff size={28} /></button>
                </div>
             </div>
          </motion.div>
       </AnimatePresence>
    );
+};
+
+const RemoteVideo = ({ stream }: { stream: MediaStream }) => {
+   const videoRef = useRef<HTMLVideoElement>(null);
+   useEffect(() => {
+      if (videoRef.current) videoRef.current.srcObject = stream;
+   }, [stream]);
+   return <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />;
 };
 
 export default CallOverlay;
