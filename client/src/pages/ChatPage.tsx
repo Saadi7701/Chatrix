@@ -358,7 +358,7 @@ const ChatPage = () => {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-4 md:gap-6 text-gray-500">
+                <div className="flex items-center gap-3 md:gap-6 text-gray-500">
                   {user?.quantumEncryption && (
                     <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20">
                       <Shield className="w-3 h-3 text-cyan-400" />
@@ -367,13 +367,13 @@ const ChatPage = () => {
                   )}
                   <Video 
                     onClick={() => (window as any).startNeuralCall?.(activeConversation, 'VIDEO')}
-                    className="w-5 h-5 cursor-pointer hover:text-cyan-400 transition-colors hidden sm:block" 
+                    className="w-5 h-5 md:w-6 md:h-6 cursor-pointer hover:text-cyan-400 transition-colors" 
                   />
                   <Phone 
                     onClick={() => (window as any).startNeuralCall?.(activeConversation, 'VOICE')}
-                    className="w-5 h-5 cursor-pointer hover:text-cyan-400 transition-colors" 
+                    className="w-5 h-5 md:w-6 md:h-6 cursor-pointer hover:text-cyan-400 transition-colors" 
                   />
-                  <MoreVertical className="w-5 h-5 cursor-pointer hover:text-white" />
+                  <MoreVertical className="w-5 h-5 md:w-6 md:h-6 cursor-pointer hover:text-white" />
                 </div>
               </div>
 
