@@ -52,23 +52,14 @@ export const setupSocket = (io: Server) => {
       console.log(`[socket]: User ${userId} joined and is ONLINE - ${pendingMessages.length} pending messages delivered.`);
     });
 
-    // Handle messages
-    socket.on('send_message', async (data) => {
-      const { receiverId, content, senderId, type = 'TEXT' } = data;
-      
-      const receiverIsOnline = userSocketMap[receiverId] ? true : false;
-
-      // Special Logic: If receiver is offline, only messages in </> brackets are allowed
-      if (!receiverIsOnline && type === 'TEXT') {
-        const isBracketMessage = content.startsWith('</') && content.endsWith('/>');
-        if (!isBracketMessage) {
-          socket.emit('error', { message: 'User is offline. Direct transmissions require </> neural encapsulation.' });
-          return;
-        }
-      }
-
-      // Save to DB
-      const message = await prisma.message.create({
+      // Handle messages
+      socket.on('send_message', async (data) => {
+        const { receiverId, content, senderId, type = 'TEXT' } = data;
+        
+        const receiverIsOnline = userSocketMap[receiverId] ? true : false;
+  
+        // Save to DB
+        const message = await prisma.message.create({
         data: {
           content,
           senderId,
