@@ -78,14 +78,14 @@ export const updateGroup = async (req: Request, res: Response) => {
   const userId = (req as any).userId;
 
   try {
-    const group = await prisma.group.findUnique({ where: { id: groupId } });
+    const group = await prisma.group.findUnique({ where: { id: groupId as string } });
     if (!group || group.adminId !== userId) {
       return res.status(403).json({ message: 'Only admin can update group' });
     }
 
     const updatedGroup = await prisma.group.update({
-      where: { id: groupId },
-      data: { name, description, icon }
+      where: { id: groupId as string },
+      data: { name: name as string, description: description as string, icon: icon as string }
     });
     res.status(200).json(updatedGroup);
   } catch (error) {
@@ -99,15 +99,15 @@ export const addMembers = async (req: Request, res: Response) => {
   const userId = (req as any).userId;
 
   try {
-    const group = await prisma.group.findUnique({ where: { id: groupId } });
+    const group = await prisma.group.findUnique({ where: { id: groupId as string } });
     if (!group || group.adminId !== userId) {
       return res.status(403).json({ message: 'Only admin can add members' });
     }
 
     await prisma.groupMember.createMany({
-      data: memberIds.map((id: string) => ({
+      data: (memberIds as string[]).map((id: string) => ({
         userId: id,
-        groupId,
+        groupId: groupId as string,
         role: 'MEMBER'
       })),
       skipDuplicates: true
@@ -124,7 +124,7 @@ export const removeMember = async (req: Request, res: Response) => {
   const userId = (req as any).userId;
 
   try {
-    const group = await prisma.group.findUnique({ where: { id: groupId } });
+    const group = await prisma.group.findUnique({ where: { id: groupId as string } });
     if (!group || group.adminId !== userId) {
       return res.status(403).json({ message: 'Only admin can remove members' });
     }
@@ -136,8 +136,8 @@ export const removeMember = async (req: Request, res: Response) => {
     await prisma.groupMember.delete({
       where: {
         userId_groupId: {
-          userId: memberId,
-          groupId
+          userId: memberId as string,
+          groupId: groupId as string
         }
       }
     });
@@ -155,7 +155,7 @@ export const getGroupMessages = async (req: Request, res: Response) => {
   try {
     // Check if user is a member
     const membership = await prisma.groupMember.findUnique({
-      where: { userId_groupId: { userId, groupId } }
+      where: { userId_groupId: { userId, groupId: groupId as string } }
     });
 
     if (!membership) {
@@ -163,7 +163,7 @@ export const getGroupMessages = async (req: Request, res: Response) => {
     }
 
     const messages = await prisma.message.findMany({
-      where: { groupId },
+      where: { groupId: groupId as string },
       include: {
         sender: {
           select: { username: true, profilePic: true }

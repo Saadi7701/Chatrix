@@ -507,7 +507,6 @@ const ChatPage = () => {
             </motion.div>
           )}
         </AnimatePresence>
-        </div>
 
         {/* Main Chat Area */}
         <div className={`
