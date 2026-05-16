@@ -327,25 +327,44 @@ const ChatPage = () => {
 
           <div className="flex-1 overflow-y-auto custom-scrollbar">
             {!isStealth ? (
-              contacts.length > 0 ? (
-                contacts.map((contact) => (
-                  <ContactCard 
-                    key={contact.id}
-                    active={activeConversation?.id === contact.id} 
-                    name={contact.username} 
-                    msg={contact.userCode}
-                    status={contact.isOnline ? 'Online' : 'Away'}
-                    onClick={() => setActiveConversation(contact)}
-                    pic={contact.profilePic}
-                    lastMessage={contact.lastMessage}
-                  />
-                ))
-              ) : (
-                <div className="p-12 text-center opacity-20">
-                   <Cpu className="w-12 h-12 text-gray-700 mx-auto mb-4" />
-                   <p className="text-[10px] font-black tracking-widest uppercase">No Active Nodes</p>
-                </div>
-              )
+              (() => {
+                const filtered = contacts.filter(c => 
+                  c.username.toLowerCase().includes(searchCode.toLowerCase()) ||
+                  c.userCode.toLowerCase().includes(searchCode.toLowerCase())
+                );
+                
+                if (filtered.length > 0) {
+                  return filtered.map((contact) => (
+                    <ContactCard 
+                      key={contact.id}
+                      active={activeConversation?.id === contact.id} 
+                      name={contact.username} 
+                      msg={contact.userCode}
+                      status={contact.isOnline ? 'Online' : 'Away'}
+                      onClick={() => {
+                        setActiveConversation(contact);
+                        setSearchCode(''); // Clear search on select
+                      }}
+                      pic={contact.profilePic}
+                      lastMessage={contact.lastMessage}
+                    />
+                  ));
+                } else if (searchCode.length > 0) {
+                  return (
+                    <div className="p-12 text-center">
+                       <p className="text-[10px] font-black text-cyan-400 tracking-widest uppercase mb-4">No Contact Found</p>
+                       <p className="text-[8px] text-gray-500 uppercase tracking-widest">Press Enter to search global system for code: "{searchCode}"</p>
+                    </div>
+                  );
+                } else {
+                  return (
+                    <div className="p-12 text-center opacity-20">
+                       <Cpu className="w-12 h-12 text-gray-700 mx-auto mb-4" />
+                       <p className="text-[10px] font-black tracking-widest uppercase">No Active Nodes</p>
+                    </div>
+                  );
+                }
+              })()
             ) : (
               <div className="p-12 text-center opacity-20">
                  <Shield className="w-12 h-12 text-gray-700 mx-auto mb-4" />
