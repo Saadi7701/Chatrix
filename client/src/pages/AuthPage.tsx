@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Cpu, Globe, ArrowRight, User, Mail, Shield } from 'lucide-react';
+import { Lock, Zap, Globe, ArrowRight, User, Mail, Shield } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 import { API_URL } from '../config/api';
 
