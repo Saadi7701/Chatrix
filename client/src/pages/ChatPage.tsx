@@ -5,7 +5,7 @@ import {
   Send, Shield, Sparkles, Cpu,
   CheckCheck,
   Mic, Paperclip, Camera, EyeOff,
-  Square, Play, Pause, Trash2, ArrowLeft, X
+  Square, Play, Pause, Trash2, ArrowLeft, X, Zap
 } from 'lucide-react';
 import axios from 'axios';
 import { socket } from '../services/socket';
@@ -127,10 +127,13 @@ const ChatPage = () => {
     if (!token) return;
     const fetchHistory = async () => {
       try {
-        const res = await axios.get(`${API_URL}/api/auth/conversations`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setContacts(res.data);
+        const [convRes, groupRes] = await Promise.all([
+          axios.get(`${API_URL}/api/auth/conversations`, { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get(`${API_URL}/api/groups`, { headers: { Authorization: `Bearer ${token}` } })
+        ]);
+        
+        // Combine private and group chats
+        setContacts([...groupRes.data, ...convRes.data]);
       } catch (err) { console.error(err); }
     };
     fetchHistory();
@@ -165,7 +168,11 @@ const ChatPage = () => {
     if (!activeConversation || !token) return;
     const fetchMessages = async () => {
       try {
-        const res = await axios.get(`${API_URL}/api/auth/messages/${activeConversation.id}`, {
+        const url = activeConversation.members 
+          ? `${API_URL}/api/groups/${activeConversation.id}/messages`
+          : `${API_URL}/api/auth/messages/${activeConversation.id}`;
+          
+        const res = await axios.get(url, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setMessages(res.data);
@@ -174,10 +181,48 @@ const ChatPage = () => {
     fetchMessages();
   }, [activeConversation, token]);
 
+  const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
+  const [groupName, setGroupName] = useState('');
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [isCreatingGroup, setIsCreatingGroup] = useState(false);
+
+  const handleCreateGroup = async () => {
+    if (!groupName || selectedMembers.length === 0) return;
+    setIsCreatingGroup(true);
+    try {
+      const res = await axios.post(`${API_URL}/api/groups`, {
+        name: groupName,
+        memberIds: selectedMembers,
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setContacts([res.data, ...contacts]);
+      setActiveConversation(res.data);
+      setIsGroupModalOpen(false);
+      setGroupName('');
+      setSelectedMembers([]);
+      setSystemMsg('NEURAL COLLECTIVE INITIALIZED');
+      setTimeout(() => setSystemMsg(''), 3000);
+    } catch (err) {
+      console.error(err);
+      setSystemMsg('FAILED TO INITIALIZE COLLECTIVE');
+    } finally {
+      setIsCreatingGroup(false);
+    }
+  };
+
+  const toggleMemberSelection = (id: string) => {
+    setSelectedMembers(prev => 
+      prev.includes(id) ? prev.filter(mid => mid !== id) : [...prev, id]
+    );
+  };
+
   const handleSendMessage = async () => {
     if (!inputText || !activeConversation) return;
     socket.emit('send_message', {
-      receiverId: activeConversation.id,
+      receiverId: activeConversation.members ? null : activeConversation.id,
+      groupId: activeConversation.members ? activeConversation.id : null,
       content: inputText,
       senderId: user?.id,
       type: 'TEXT'
@@ -252,7 +297,8 @@ const ChatPage = () => {
       });
       
       socket.emit('send_message', {
-        receiverId: activeConversation.id,
+        receiverId: activeConversation.members ? null : activeConversation.id,
+        groupId: activeConversation.members ? activeConversation.id : null,
         content: res.data.url,
         senderId: user?.id,
         type: 'AUDIO'
@@ -286,7 +332,8 @@ const ChatPage = () => {
       });
       
       socket.emit('send_message', {
-        receiverId: activeConversation.id,
+        receiverId: activeConversation.members ? null : activeConversation.id,
+        groupId: activeConversation.members ? activeConversation.id : null,
         content: res.data.url,
         senderId: user?.id,
         type: res.data.type.toUpperCase() === 'VOICE' ? 'AUDIO' : res.data.type.toUpperCase()
@@ -307,8 +354,11 @@ const ChatPage = () => {
               <h2 className="text-2xl font-black text-white">Neural Hub</h2>
               {isStealth && <EyeOff className="w-4 h-4 text-gray-700 animate-pulse" />}
             </div>
-            <button className="p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-all">
-              <Edit3 className="w-5 h-5 text-gray-400" />
+            <button 
+              onClick={() => setIsGroupModalOpen(true)}
+              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-all group"
+            >
+              <Edit3 className="w-5 h-5 text-gray-400 group-hover:text-cyan-400" />
             </button>
           </div>
 
@@ -329,8 +379,8 @@ const ChatPage = () => {
             {!isStealth ? (
               (() => {
                 const filtered = contacts.filter(c => 
-                  c.username.toLowerCase().includes(searchCode.toLowerCase()) ||
-                  c.userCode.toLowerCase().includes(searchCode.toLowerCase())
+                  (c.username || c.name || '').toLowerCase().includes(searchCode.toLowerCase()) ||
+                  (c.userCode || '').toLowerCase().includes(searchCode.toLowerCase())
                 );
                 
                 if (filtered.length > 0) {
@@ -338,15 +388,16 @@ const ChatPage = () => {
                     <ContactCard 
                       key={contact.id}
                       active={activeConversation?.id === contact.id} 
-                      name={contact.username} 
-                      msg={contact.userCode}
-                      status={contact.isOnline ? 'Online' : 'Away'}
+                      name={contact.username || contact.name} 
+                      msg={contact.members ? `${contact.members.length} Nodes Synchronized` : contact.userCode}
+                      status={contact.members ? 'COLLECTIVE' : (contact.isOnline ? 'Online' : 'Away')}
                       onClick={() => {
                         setActiveConversation(contact);
                         setSearchCode(''); // Clear search on select
                       }}
-                      pic={contact.profilePic}
+                      pic={contact.profilePic || contact.icon}
                       lastMessage={contact.lastMessage}
+                      isGroup={!!contact.members}
                     />
                   ));
                 } else if (searchCode.length > 0) {
@@ -374,6 +425,90 @@ const ChatPage = () => {
           </div>
         </div>
 
+        {/* Group Creation Modal */}
+        <AnimatePresence>
+          {isGroupModalOpen && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+            >
+              <motion.div 
+                initial={{ scale: 0.9, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                className="bg-[#0b141a] border border-white/10 rounded-[2.5rem] w-full max-w-lg overflow-hidden shadow-2xl"
+              >
+                <div className="p-8 border-b border-white/5 flex justify-between items-center">
+                   <div>
+                      <h2 className="text-2xl font-black text-white tracking-tight">Initialize Collective</h2>
+                      <p className="text-[9px] font-black text-cyan-400 tracking-widest uppercase mt-1">Multi-Node Connection Protocol</p>
+                   </div>
+                   <button onClick={() => setIsGroupModalOpen(false)} className="p-3 rounded-2xl bg-white/5 hover:bg-red-500/10 hover:text-red-500 transition-all">
+                      <X size={20} />
+                   </button>
+                </div>
+
+                <div className="p-8 space-y-8">
+                   <div className="space-y-4">
+                      <p className="text-[9px] font-black text-gray-500 tracking-[0.2em] uppercase">Collective Identity</p>
+                      <input 
+                        type="text" 
+                        placeholder="Name your collective..." 
+                        value={groupName}
+                        onChange={(e) => setGroupName(e.target.value)}
+                        className="w-full bg-white/[0.03] border border-white/5 rounded-2xl p-4 text-sm text-white outline-none focus:border-cyan-500 transition-all"
+                      />
+                   </div>
+
+                   <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <p className="text-[9px] font-black text-gray-500 tracking-[0.2em] uppercase">Synchronize Nodes ({selectedMembers.length})</p>
+                        <p className="text-[9px] font-black text-cyan-400 tracking-widest uppercase">Contacts Only</p>
+                      </div>
+                      <div className="max-h-[300px] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                         {contacts.filter(c => !c.members).map(contact => (
+                            <div 
+                              key={contact.id}
+                              onClick={() => toggleMemberSelection(contact.id)}
+                              className={`
+                                p-4 rounded-2xl border flex items-center gap-4 cursor-pointer transition-all
+                                ${selectedMembers.includes(contact.id) 
+                                  ? 'bg-cyan-500/10 border-cyan-500/30' 
+                                  : 'bg-white/[0.02] border-white/5 hover:border-white/10'}
+                              `}
+                            >
+                               <div className="w-10 h-10 rounded-xl overflow-hidden border border-white/10">
+                                  <img src={contact.profilePic || `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${contact.username}`} alt="" />
+                               </div>
+                               <div className="flex-1">
+                                  <p className="font-bold text-white text-sm">{contact.username}</p>
+                                  <p className="text-[8px] font-black text-gray-600 tracking-widest uppercase">{contact.userCode}</p>
+                               </div>
+                               <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${selectedMembers.includes(contact.id) ? 'bg-cyan-500 border-cyan-500' : 'border-white/10'}`}>
+                                  <Zap size={10} className="text-black fill-current" />
+                               </div>
+                            </div>
+                         ))}
+                      </div>
+                   </div>
+                </div>
+
+                <div className="p-8 bg-black/20">
+                   <button 
+                     onClick={handleCreateGroup}
+                     disabled={isCreatingGroup || !groupName || selectedMembers.length === 0}
+                     className="w-full py-4 rounded-2xl bg-cyan-500 text-black font-black text-xs tracking-widest uppercase shadow-[0_0_30px_rgba(0,242,255,0.2)] hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale disabled:scale-100"
+                   >
+                     {isCreatingGroup ? 'Establishing Neural Links...' : 'INITIALIZE COLLECTIVE'}
+                   </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        </div>
+
         {/* Main Chat Area */}
         <div className={`
           ${activeConversation ? 'flex' : 'hidden md:flex'}
@@ -392,12 +527,12 @@ const ChatPage = () => {
                     className="flex items-center gap-3 cursor-pointer group"
                   >
                     <div className="w-10 h-10 md:w-12 md:h-12 rounded-2xl bg-white/5 overflow-hidden border border-white/10 flex-shrink-0 group-hover:border-cyan-400/50 transition-all">
-                      <img src={activeConversation.profilePic || `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${activeConversation.username}`} alt="avatar" />
+                      <img src={(activeConversation.profilePic || activeConversation.icon) || `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${activeConversation.username || activeConversation.name}`} alt="avatar" />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="font-black text-white text-base md:text-lg tracking-tight truncate group-hover:text-cyan-400 transition-colors">{activeConversation.username}</h3>
-                      <span className={`text-[8px] md:text-[9px] font-black tracking-widest uppercase ${activeConversation.isOnline ? 'text-cyan-400' : 'text-gray-600'}`}>
-                        {activeConversation.isOnline ? 'SYNCED' : 'OFFLINE'}
+                      <h3 className="font-black text-white text-base md:text-lg tracking-tight truncate group-hover:text-cyan-400 transition-colors">{activeConversation.username || activeConversation.name}</h3>
+                      <span className={`text-[8px] md:text-[9px] font-black tracking-widest uppercase ${activeConversation.members ? 'text-purple-400' : (activeConversation.isOnline ? 'text-cyan-400' : 'text-gray-600')}`}>
+                        {activeConversation.members ? `${activeConversation.members.length} NODES` : (activeConversation.isOnline ? 'SYNCED' : 'OFFLINE')}
                       </span>
                     </div>
                   </div>
@@ -409,14 +544,18 @@ const ChatPage = () => {
                       <span className="text-[8px] font-black text-cyan-400 tracking-widest uppercase">Quantum Secured</span>
                     </div>
                   )}
-                  <Video 
-                    onClick={() => (window as any).startNeuralCall?.(activeConversation, 'VIDEO')}
-                    className="w-5 h-5 md:w-6 md:h-6 cursor-pointer hover:text-cyan-400 transition-colors" 
-                  />
-                  <Phone 
-                    onClick={() => (window as any).startNeuralCall?.(activeConversation, 'VOICE')}
-                    className="w-5 h-5 md:w-6 md:h-6 cursor-pointer hover:text-cyan-400 transition-colors" 
-                  />
+                  {!activeConversation.members && (
+                    <>
+                      <Video 
+                        onClick={() => (window as any).startNeuralCall?.(activeConversation, 'VIDEO')}
+                        className="w-5 h-5 md:w-6 md:h-6 cursor-pointer hover:text-cyan-400 transition-colors" 
+                      />
+                      <Phone 
+                        onClick={() => (window as any).startNeuralCall?.(activeConversation, 'VOICE')}
+                        className="w-5 h-5 md:w-6 md:h-6 cursor-pointer hover:text-cyan-400 transition-colors" 
+                      />
+                    </>
+                  )}
                   <MoreVertical className="w-5 h-5 md:w-6 md:h-6 cursor-pointer hover:text-white" />
                 </div>
               </div>
@@ -440,39 +579,83 @@ const ChatPage = () => {
 
                       <div className="w-48 h-48 md:w-64 md:h-64 rounded-[3rem] bg-cyan-400/10 border border-white/10 p-2 mb-8 shadow-[0_0_50px_rgba(0,242,255,0.1)]">
                          <div className="w-full h-full rounded-[2.5rem] overflow-hidden border-2 border-white/5">
-                            <img src={activeConversation.profilePic || `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${activeConversation.username}`} className="w-full h-full object-cover" alt="profile" />
+                            <img src={(activeConversation.profilePic || activeConversation.icon) || `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${activeConversation.username || activeConversation.name}`} className="w-full h-full object-cover" alt="profile" />
                          </div>
                       </div>
 
                       <div className="space-y-2 mb-8">
-                         <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter uppercase">{activeConversation.fullName || activeConversation.username}</h2>
-                         <p className="text-[10px] md:text-xs font-black text-cyan-400 tracking-[0.4em] uppercase">Neural Identity Locked</p>
+                         <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter uppercase">{activeConversation.fullName || activeConversation.username || activeConversation.name}</h2>
+                         <p className="text-[10px] md:text-xs font-black text-cyan-400 tracking-[0.4em] uppercase">
+                            {activeConversation.members ? 'Neural Collective Established' : 'Neural Identity Locked'}
+                         </p>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-md mb-8">
-                         <div className="bg-white/5 border border-white/5 p-6 rounded-3xl text-center">
-                            <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1">Access Code</p>
-                            <p className="text-xl font-black text-white tracking-widest">{activeConversation.userCode}</p>
+                      {activeConversation.members ? (
+                         <div className="w-full max-w-2xl space-y-6">
+                            <div className="flex justify-between items-center px-4">
+                               <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Linked Nodes ({activeConversation.members.length})</p>
+                               {activeConversation.adminId === user?.id && (
+                                  <button className="text-[9px] font-black text-cyan-400 uppercase tracking-widest hover:underline">+ Link New Node</button>
+                               )}
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                               {activeConversation.members.map((m: any) => (
+                                  <div key={m.userId} className="bg-white/5 border border-white/5 p-4 rounded-2xl flex items-center gap-3 justify-between">
+                                     <div className="flex items-center gap-3 min-w-0">
+                                        <div className="w-8 h-8 rounded-lg overflow-hidden border border-white/10">
+                                           <img src={m.user.profilePic || `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${m.user.username}`} alt="" />
+                                        </div>
+                                        <div className="min-w-0">
+                                           <p className="font-bold text-white text-xs truncate">{m.user.username}</p>
+                                           <p className="text-[7px] font-black text-cyan-400 tracking-widest uppercase">{m.role}</p>
+                                        </div>
+                                     </div>
+                                     {activeConversation.adminId === user?.id && m.userId !== user?.id && (
+                                        <button className="p-2 text-gray-500 hover:text-red-500 transition-colors">
+                                           <Trash2 size={14} />
+                                        </button>
+                                     )}
+                                  </div>
+                               ))}
+                            </div>
+                            {activeConversation.adminId === user?.id && (
+                               <div className="pt-8 border-t border-white/5 space-y-4">
+                                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Collective Command</p>
+                                  <div className="flex gap-4">
+                                     <button className="flex-1 py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-[9px] tracking-widest uppercase hover:bg-white/10 transition-all">Update Identity</button>
+                                     <button className="flex-1 py-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 font-black text-[9px] tracking-widest uppercase hover:bg-red-500 hover:text-white transition-all">Dissolve Collective</button>
+                                  </div>
+                               </div>
+                            )}
                          </div>
-                         <div className="bg-white/5 border border-white/5 p-6 rounded-3xl text-center">
-                            <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1">Status</p>
-                            <p className={`text-xl font-black ${activeConversation.isOnline ? 'text-cyan-400' : 'text-gray-600'} uppercase tracking-widest`}>
-                               {activeConversation.isOnline ? 'Active' : 'Dormant'}
-                            </p>
-                         </div>
-                      </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-md mb-8">
+                           <div className="bg-white/5 border border-white/5 p-6 rounded-3xl text-center">
+                              <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1">Access Code</p>
+                              <p className="text-xl font-black text-white tracking-widest">{activeConversation.userCode}</p>
+                           </div>
+                           <div className="bg-white/5 border border-white/5 p-6 rounded-3xl text-center">
+                              <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1">Status</p>
+                              <p className={`text-xl font-black ${activeConversation.isOnline ? 'text-cyan-400' : 'text-gray-600'} uppercase tracking-widest`}>
+                                 {activeConversation.isOnline ? 'Active' : 'Dormant'}
+                              </p>
+                           </div>
+                        </div>
+                      )}
 
-                      <div className="flex gap-4">
-                         <button 
-                            onClick={() => (window as any).startNeuralCall?.(activeConversation, 'VOICE')}
-                            className="px-8 py-4 rounded-2xl bg-cyan-500 text-black font-black text-[10px] tracking-widest uppercase shadow-[0_0_30px_rgba(0,242,255,0.3)] hover:scale-105 transition-all"
-                         >
-                            Initiate Voice Link
-                         </button>
-                         <button className="px-8 py-4 rounded-2xl bg-white/5 text-white font-black text-[10px] tracking-widest uppercase border border-white/10 hover:bg-white/10 transition-all">
-                            Secure Data Transfer
-                         </button>
-                      </div>
+                      {!activeConversation.members && (
+                        <div className="flex gap-4">
+                           <button 
+                              onClick={() => (window as any).startNeuralCall?.(activeConversation, 'VOICE')}
+                              className="px-8 py-4 rounded-2xl bg-cyan-500 text-black font-black text-[10px] tracking-widest uppercase shadow-[0_0_30px_rgba(0,242,255,0.3)] hover:scale-105 transition-all"
+                           >
+                              Initiate Voice Link
+                           </button>
+                           <button className="px-8 py-4 rounded-2xl bg-white/5 text-white font-black text-[10px] tracking-widest uppercase border border-white/10 hover:bg-white/10 transition-all">
+                              Secure Data Transfer
+                           </button>
+                        </div>
+                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>

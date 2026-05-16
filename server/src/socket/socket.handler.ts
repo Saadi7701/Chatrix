@@ -17,6 +17,13 @@ export const setupSocket = (io: Server) => {
         where: { id: userId },
         data: { isOnline: true, lastSeen: new Date() }
       });
+
+      // Join rooms for all groups the user is in
+      const memberships = await prisma.groupMember.findMany({ where: { userId } });
+      memberships.forEach(m => {
+        socket.join(`group_${m.groupId}`);
+        console.log(`[socket]: User ${userId} joined room group_${m.groupId}`);
+      });
       
       // 1. Find all messages sent to this user while they were offline
       const pendingMessages = await prisma.message.findMany({
@@ -54,8 +61,33 @@ export const setupSocket = (io: Server) => {
 
       // Handle messages
       socket.on('send_message', async (data) => {
-        const { receiverId, content, senderId, type = 'TEXT' } = data;
+        const { receiverId, groupId, content, senderId, type = 'TEXT' } = data;
         
+        if (groupId) {
+          // GROUP MESSAGE LOGIC
+          const message = await prisma.message.create({
+            data: {
+              content,
+              senderId,
+              groupId,
+              type: type as any,
+              status: 'DELIVERED'
+            },
+            include: {
+              sender: {
+                select: {
+                  id: true,
+                  username: true,
+                  profilePic: true,
+                  userCode: true
+                }
+              }
+            }
+          });
+          io.to(`group_${groupId}`).emit('receive_message', message);
+          return;
+        }
+
         const receiverIsOnline = userSocketMap[receiverId] ? true : false;
   
         // Save to DB

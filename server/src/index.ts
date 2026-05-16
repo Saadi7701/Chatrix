@@ -8,6 +8,7 @@ import authRoutes from './routes/auth';
 import chatRoutes from './routes/chat';
 import storyRoutes from './routes/story';
 import uploadRoutes from './routes/upload';
+import groupRoutes from './routes/group';
 import { setupSocket } from './socket/socket.handler';
 import prisma from './config/prisma';
 
@@ -61,6 +62,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/stories', storyRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/groups', groupRoutes);
 
 // Socket Handler
 setupSocket(io);
