@@ -98,6 +98,12 @@ model Message {
   replies     Message[] @relation("MessageReplies")
 
   reactions   Reaction[]
+
+  // Indexes for high-speed querying and preventing HTTP 499 timeouts
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([createdAt])
+  @@index([senderId, receiverId])
 }
 
 enum MessageType {
