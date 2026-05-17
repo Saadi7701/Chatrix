@@ -312,7 +312,7 @@ export const savePushSubscription = async (req: Request, res: Response) => {
   try {
     await prisma.user.update({
       where: { id: userId },
-      data: { pushSubscription: subscription || null }
+      data: { pushSubscription: subscription || null } as any
     });
     res.status(200).json({ success: true, message: 'Push subscription registered.' });
   } catch (error) {

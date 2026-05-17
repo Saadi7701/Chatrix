@@ -116,9 +116,9 @@ export const setupSocket = (io: Server) => {
       } else {
         // Receiver is offline! Send Web Push Notification!
         try {
-          const receiver = await prisma.user.findUnique({
+          const receiver: any = await prisma.user.findUnique({
             where: { id: receiverId },
-            select: { pushSubscription: true, notificationsEnabled: true }
+            select: { pushSubscription: true, notificationsEnabled: true } as any
           });
 
           if (receiver?.notificationsEnabled && receiver.pushSubscription) {
@@ -139,7 +139,7 @@ export const setupSocket = (io: Server) => {
                 if (err.statusCode === 410 || err.statusCode === 404) {
                   prisma.user.update({
                     where: { id: receiverId },
-                    data: { pushSubscription: Prisma.DbNull }
+                    data: { pushSubscription: Prisma.DbNull } as any
                   }).catch(e => console.error('[web-push]: Error cleaning sub:', e));
                 }
               });
