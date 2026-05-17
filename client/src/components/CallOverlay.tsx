@@ -34,6 +34,22 @@ const CallOverlay = () => {
    const pendingIceCandidates = useRef<RTCIceCandidateInit[]>([]);
    const callStartTimeRef = useRef<number | null>(null);
 
+   // Sync stream objects with video DOM elements to prevent race conditions during React rendering
+   useEffect(() => {
+      if (callState !== 'IDLE') {
+         if (localVideoRef.current && localStreamRef.current) {
+            if (localVideoRef.current.srcObject !== localStreamRef.current) {
+               localVideoRef.current.srcObject = localStreamRef.current;
+            }
+         }
+         if (remoteVideoRef.current && remoteStreamRef.current) {
+            if (remoteVideoRef.current.srcObject !== remoteStreamRef.current) {
+               remoteVideoRef.current.srcObject = remoteStreamRef.current;
+            }
+         }
+      }
+   }, [callState, localStreamRef.current, remoteStreamRef.current]);
+
    useEffect(() => {
       socket.on('incoming_call', async ({ offer, from, type, username, profilePic }) => {
          setRemoteUser({ id: from, username, profilePic });
@@ -45,7 +61,10 @@ const CallOverlay = () => {
          
          while (pendingIceCandidates.current.length > 0) {
             const candidate = pendingIceCandidates.current.shift();
-            if (candidate) await pc.addIceCandidate(new RTCIceCandidate(candidate));
+            if (candidate) {
+               await pc.addIceCandidate(new RTCIceCandidate(candidate))
+                  .catch(err => console.error('Error adding pending candidate on incoming:', err));
+            }
          }
       });
 
@@ -54,14 +73,27 @@ const CallOverlay = () => {
             await peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(answer));
             setCallState('ACTIVE');
             callStartTimeRef.current = Date.now();
+
+            // Apply all pending candidates gathered before the answer description was applied
+            while (pendingIceCandidates.current.length > 0) {
+               const candidate = pendingIceCandidates.current.shift();
+               if (candidate) {
+                  await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate))
+                     .catch(err => console.error('Error adding pending candidate on answer:', err));
+               }
+            }
          }
       });
 
       socket.on('ice_candidate', async ({ candidate }) => {
-         if (peerConnectionRef.current && peerConnectionRef.current.remoteDescription) {
-            await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
-         } else {
-            pendingIceCandidates.current.push(candidate);
+         try {
+            if (peerConnectionRef.current && peerConnectionRef.current.remoteDescription) {
+               await peerConnectionRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+            } else {
+               pendingIceCandidates.current.push(candidate);
+            }
+         } catch (err) {
+            console.error('Error adding ICE candidate:', err);
          }
       });
 
@@ -106,11 +138,21 @@ const CallOverlay = () => {
 
       pc.ontrack = (event) => {
          console.log('Remote track received:', event.track.kind);
-         if (remoteVideoRef.current) {
-            remoteVideoRef.current.srcObject = event.streams[0];
-            remoteVideoRef.current.play().catch(err => console.error('Auto-play failed:', err));
+         if (event.streams && event.streams[0]) {
+            remoteStreamRef.current = event.streams[0];
+            if (remoteVideoRef.current) {
+               remoteVideoRef.current.srcObject = event.streams[0];
+               remoteVideoRef.current.play().catch(err => console.error('Auto-play failed:', err));
+            }
+         } else {
+            const newStream = new MediaStream();
+            newStream.addTrack(event.track);
+            remoteStreamRef.current = newStream;
+            if (remoteVideoRef.current) {
+               remoteVideoRef.current.srcObject = newStream;
+               remoteVideoRef.current.play().catch(err => console.error('Auto-play failed:', err));
+            }
          }
-         remoteStreamRef.current = event.streams[0];
       };
 
       peerConnectionRef.current = pc;
@@ -127,7 +169,6 @@ const CallOverlay = () => {
          setCallType(type);
          setCallState('RINGING');
          localStreamRef.current = stream;
-         if (localVideoRef.current) localVideoRef.current.srcObject = stream;
          const pc = createPeerConnection(targetUser.id);
          stream.getTracks().forEach((track) => pc.addTrack(track, stream));
          const offer = await pc.createOffer();
@@ -147,7 +188,6 @@ const CallOverlay = () => {
             audio: true,
          });
          localStreamRef.current = stream;
-         if (localVideoRef.current) localVideoRef.current.srcObject = stream;
          const pc = peerConnectionRef.current;
          if (pc) {
             stream.getTracks().forEach((track) => pc.addTrack(track, stream));
@@ -246,7 +286,6 @@ const CallOverlay = () => {
 
                {callState === 'RECEIVING' && (
                   <div className="absolute inset-0 bg-[#050505]/95 backdrop-blur-3xl flex flex-col items-center justify-center z-50 p-6">
-                     {/* Pinging background - must be pointer-events-none */}
                      <div className="w-32 h-32 md:w-48 md:h-48 rounded-full bg-cyan-400 animate-ping absolute opacity-10 pointer-events-none" />
                      
                      <div className="w-24 h-24 md:w-40 md:h-40 rounded-[2rem] md:rounded-[3rem] bg-white/5 border border-white/10 overflow-hidden relative shadow-[0_0_50px_rgba(0,242,255,0.2)] mb-8">
@@ -330,3 +369,4 @@ const CallOverlay = () => {
 };
 
 export default CallOverlay;
+
