@@ -304,3 +304,20 @@ export const checkUserCode = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Error checking code' });
   }
 };
+
+export const savePushSubscription = async (req: Request, res: Response) => {
+  const userId = (req as any).userId;
+  const { subscription } = req.body;
+
+  try {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { pushSubscription: subscription }
+    });
+    res.status(200).json({ success: true, message: 'Push subscription registered.' });
+  } catch (error) {
+    console.error('Error saving push subscription:', error);
+    res.status(500).json({ message: 'Error saving push subscription' });
+  }
+};
+

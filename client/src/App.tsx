@@ -11,6 +11,7 @@ import NotificationManager from './components/NotificationManager';
 import CallOverlay from './components/CallOverlay';
 
 import { connectSocket, disconnectSocket } from './services/socket';
+import { registerPushNotifications } from './services/pushNotifications';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const token = useAuthStore((state) => state.token);
@@ -28,6 +29,12 @@ function App() {
       disconnectSocket();
     }
   }, [user?.id, token]);
+
+  useEffect(() => {
+    if (token && user?.notificationsEnabled) {
+      registerPushNotifications(token);
+    }
+  }, [token, user?.notificationsEnabled]);
 
   useEffect(() => {
     if (user?.darkTheme === false) {

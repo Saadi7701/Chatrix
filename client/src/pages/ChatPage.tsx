@@ -101,6 +101,9 @@ const ChatPage = () => {
 
     const handleUserStatusChange = ({ userId, isOnline }: any) => {
       updateUserStatus(userId, isOnline);
+      setContacts((prev) =>
+        prev.map((c) => (c.id === userId ? { ...c, isOnline } : c))
+      );
     };
 
     const handleError = ({ message }: any) => {

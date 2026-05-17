@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { login, register, checkUserCode, searchUser, getConversation, getConversations, getCalls, updateStealthCode, updateProfile, updateSettings } from '../controllers/auth.controller';
+import { login, register, checkUserCode, searchUser, getConversation, getConversations, getCalls, updateStealthCode, updateProfile, updateSettings, savePushSubscription } from '../controllers/auth.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -14,5 +14,6 @@ router.get('/calls', authMiddleware, getCalls);
 router.put('/profile', authMiddleware, updateProfile);
 router.put('/stealth-code', authMiddleware, updateStealthCode);
 router.put('/settings', authMiddleware, updateSettings);
+router.post('/push-subscription', authMiddleware, savePushSubscription);
 
 export default router;

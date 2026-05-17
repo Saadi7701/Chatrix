@@ -5,11 +5,12 @@ import {
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
+import { emitLogout } from '../services/socket';
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const logout = useAuthStore(state => state.logout);
+  const { logout, user } = useAuthStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const menuItems = [
@@ -92,7 +93,10 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
           <div className="relative group w-full flex justify-center">
             <button 
-              onClick={() => logout()}
+              onClick={() => {
+                if (user?.id) emitLogout(user.id);
+                logout();
+              }}
               className="p-4 text-gray-600 hover:text-red-500 transition-all"
             >
               <LogOut size={24} />

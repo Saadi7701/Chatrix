@@ -1,8 +1,22 @@
 import { Server, Socket } from 'socket.io';
 import prisma from '../config/prisma';
+import webpush from 'web-push';
 
-// Memory storage for online users
+// Configure Web Push VAPID keys
+const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || '';
+const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || '';
+const vapidEmail = process.env.VAPID_EMAIL || 'mailto:support@chatrix.app';
+
+if (vapidPublicKey && vapidPrivateKey) {
+  webpush.setVapidDetails(vapidEmail, vapidPublicKey, vapidPrivateKey);
+  console.log('[web-push]: VAPID details set successfully.');
+} else {
+  console.warn('[web-push]: VAPID keys missing. Push notifications will be disabled.');
+}
+
+// Memory storage for online users and disconnect grace periods
 const userSocketMap: { [userId: string]: string } = {};
+const disconnectTimeouts: { [userId: string]: NodeJS.Timeout } = {};
 
 export const setupSocket = (io: Server) => {
   io.on('connection', (socket: Socket) => {
@@ -13,10 +27,27 @@ export const setupSocket = (io: Server) => {
       socket.join(userId);
       userSocketMap[userId] = socket.id;
       
-      await prisma.user.update({
+      // Clear any pending offline grace period
+      if (disconnectTimeouts[userId]) {
+        clearTimeout(disconnectTimeouts[userId]);
+        delete disconnectTimeouts[userId];
+        console.log(`[socket]: User ${userId} reconnected within grace period.`);
+      }
+
+      // Check if they are currently marked offline in DB
+      const user = await prisma.user.findUnique({
         where: { id: userId },
-        data: { isOnline: true, lastSeen: new Date() }
+        select: { isOnline: true }
       });
+
+      if (!user?.isOnline) {
+        await prisma.user.update({
+          where: { id: userId },
+          data: { isOnline: true, lastSeen: new Date() }
+        });
+        io.emit('user_status_change', { userId, isOnline: true });
+        console.log(`[socket]: User ${userId} marked ONLINE`);
+      }
       
       // 1. Find all messages sent to this user while they were offline
       const pendingMessages = await prisma.message.findMany({
@@ -48,8 +79,7 @@ export const setupSocket = (io: Server) => {
         }
       }
 
-      io.emit('user_status_change', { userId, isOnline: true });
-      console.log(`[socket]: User ${userId} joined and is ONLINE - ${pendingMessages.length} pending messages delivered.`);
+      console.log(`[socket]: User ${userId} joined - ${pendingMessages.length} pending messages delivered.`);
     });
 
       // Handle messages
@@ -82,6 +112,40 @@ export const setupSocket = (io: Server) => {
       // Emit to receiver if online
       if (receiverIsOnline) {
         io.to(receiverId).emit('receive_message', message);
+      } else {
+        // Receiver is offline! Send Web Push Notification!
+        try {
+          const receiver = await prisma.user.findUnique({
+            where: { id: receiverId },
+            select: { pushSubscription: true, notificationsEnabled: true }
+          });
+
+          if (receiver?.notificationsEnabled && receiver.pushSubscription) {
+            const subscriptionObj = receiver.pushSubscription as any;
+            const payload = JSON.stringify({
+              title: message.sender.username,
+              body: message.type === 'TEXT' ? message.content : `Sent you a ${message.type.toLowerCase()}`,
+              icon: message.sender.profilePic || 'https://api.dicebear.com/7.x/bottts-neutral/svg?seed=chatrix',
+              data: {
+                senderId: message.senderId,
+                url: '/chat'
+              }
+            });
+
+            webpush.sendNotification(subscriptionObj, payload)
+              .catch((err) => {
+                console.error('[web-push]: Error sending notification:', err.message);
+                if (err.statusCode === 410 || err.statusCode === 404) {
+                  prisma.user.update({
+                    where: { id: receiverId },
+                    data: { pushSubscription: null }
+                  }).catch(e => console.error('[web-push]: Error cleaning sub:', e));
+                }
+              });
+          }
+        } catch (pushErr) {
+          console.error('[web-push]: Failed to fetch/send push:', pushErr);
+        }
       }
       
       // Emit back to sender (all their devices)
@@ -162,6 +226,23 @@ export const setupSocket = (io: Server) => {
       }
     });
 
+    // Handle explicit logouts immediately
+    socket.on('logout', async (userId: string) => {
+      console.log(`[socket]: Explicit logout for User ${userId}`);
+      if (disconnectTimeouts[userId]) {
+        clearTimeout(disconnectTimeouts[userId]);
+        delete disconnectTimeouts[userId];
+      }
+      if (userSocketMap[userId]) {
+        delete userSocketMap[userId];
+      }
+      await prisma.user.update({
+        where: { id: userId },
+        data: { isOnline: false, lastSeen: new Date() }
+      });
+      io.emit('user_status_change', { userId, isOnline: false });
+    });
+
     socket.on('disconnect', async () => {
       let disconnectedUserId: string | null = null;
       for (const [userId, socketId] of Object.entries(userSocketMap)) {
@@ -173,12 +254,21 @@ export const setupSocket = (io: Server) => {
       }
 
       if (disconnectedUserId) {
-        await prisma.user.update({
-          where: { id: disconnectedUserId },
-          data: { isOnline: false, lastSeen: new Date() }
-        });
-        io.emit('user_status_change', { userId: disconnectedUserId, isOnline: false });
-        console.log(`[socket]: User ${disconnectedUserId} went OFFLINE`);
+        const userId = disconnectedUserId;
+        console.log(`[socket]: User ${userId} disconnected. Grace period started...`);
+        
+        // 2-minute grace period before marking offline
+        disconnectTimeouts[userId] = setTimeout(async () => {
+          if (!userSocketMap[userId]) {
+            await prisma.user.update({
+              where: { id: userId },
+              data: { isOnline: false, lastSeen: new Date() }
+            });
+            io.emit('user_status_change', { userId, isOnline: false });
+            console.log(`[socket]: Grace period ended. User ${userId} went OFFLINE`);
+          }
+          delete disconnectTimeouts[userId];
+        }, 120000);
       }
     });
   });

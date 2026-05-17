@@ -64,6 +64,7 @@ model User {
   biometricLock       Boolean   @default(true)
 
   isVerified    Boolean   @default(false)
+  pushSubscription Json?
   sessions      Session[]
 
   @@index([userCode])

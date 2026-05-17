@@ -19,3 +19,9 @@ export const connectSocket = (userId: string, token: string) => {
 export const disconnectSocket = () => {
   socket.disconnect();
 };
+
+export const emitLogout = (userId: string) => {
+  socket.emit('logout', userId);
+  socket.disconnect();
+};
+
