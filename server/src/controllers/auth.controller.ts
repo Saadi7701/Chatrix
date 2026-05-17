@@ -17,7 +17,7 @@ export const register = async (req: Request, res: Response) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
-    
+
     // Generate a dummy email to satisfy unique constraint if not provided
     const email = `${username.toLowerCase()}@aura.elite`;
 
@@ -199,30 +199,30 @@ export const updateProfile = async (req: Request, res: Response) => {
 };
 
 export const updateSettings = async (req: Request, res: Response) => {
-  const { 
-    ghostMode, 
-    quantumEncryption, 
-    notificationsEnabled, 
-    callTransmissions, 
-    storyInjections, 
-    darkTheme, 
-    networkCache, 
-    biometricLock 
+  const {
+    ghostMode,
+    quantumEncryption,
+    notificationsEnabled,
+    callTransmissions,
+    storyInjections,
+    darkTheme,
+    networkCache,
+    biometricLock
   } = req.body;
   const userId = (req as any).userId;
 
   try {
     const user = await prisma.user.update({
       where: { id: userId },
-      data: { 
-        ghostMode, 
-        quantumEncryption, 
-        notificationsEnabled, 
-        callTransmissions, 
-        storyInjections, 
-        darkTheme, 
-        networkCache, 
-        biometricLock 
+      data: {
+        ghostMode,
+        quantumEncryption,
+        notificationsEnabled,
+        callTransmissions,
+        storyInjections,
+        darkTheme,
+        networkCache,
+        biometricLock
       }
     });
     res.status(200).json(user);
@@ -312,7 +312,7 @@ export const savePushSubscription = async (req: Request, res: Response) => {
   try {
     await prisma.user.update({
       where: { id: userId },
-      data: { pushSubscription: subscription }
+      data: { pushSubscription: subscription || null }
     });
     res.status(200).json({ success: true, message: 'Push subscription registered.' });
   } catch (error) {

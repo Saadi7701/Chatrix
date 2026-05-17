@@ -1,5 +1,6 @@
 import { Server, Socket } from 'socket.io';
 import prisma from '../config/prisma';
+import { Prisma } from '@prisma/client';
 import webpush from 'web-push';
 
 // Configure Web Push VAPID keys
@@ -138,7 +139,7 @@ export const setupSocket = (io: Server) => {
                 if (err.statusCode === 410 || err.statusCode === 404) {
                   prisma.user.update({
                     where: { id: receiverId },
-                    data: { pushSubscription: null }
+                    data: { pushSubscription: Prisma.DbNull }
                   }).catch(e => console.error('[web-push]: Error cleaning sub:', e));
                 }
               });
