@@ -8,24 +8,22 @@ const ICE_SERVERS = {
    iceServers: [
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'stun:stun1.l.google.com:19302' },
-      {
-         urls: "turn:openrelay.metered.ca:80",
-         username: "openrelayproject",
-         credential: "openrelayproject"
-      },
-      {
-         urls: "turn:openrelay.metered.ca:443",
-         username: "openrelayproject",
-         credential: "openrelayproject"
-      },
-      {
-         urls: "turn:openrelay.metered.ca:443?transport=tcp",
-         username: "openrelayproject",
-         credential: "openrelayproject"
-      }
+      { urls: 'stun:stun2.l.google.com:19302' },
+      { urls: 'stun:stun.services.mozilla.com' },
+      { urls: 'stun:global.stun.twilio.com:3478' }
    ],
    iceCandidatePoolSize: 10,
 };
+
+// If the user has added a dedicated TURN server to their .env file, inject it.
+// Free TURN server provider (50GB free/mo): https://www.metered.ca/stun-turn
+if (import.meta.env.VITE_TURN_URL && import.meta.env.VITE_TURN_USERNAME) {
+   ICE_SERVERS.iceServers.push({
+      urls: import.meta.env.VITE_TURN_URL,
+      username: import.meta.env.VITE_TURN_USERNAME,
+      credential: import.meta.env.VITE_TURN_PASSWORD
+   } as any);
+}
 
 const CallOverlay = () => {
    const { user } = useAuthStore();
