@@ -7,34 +7,38 @@ export const InstallPrompt = () => {
    const [showPrompt, setShowPrompt] = useState(false);
 
    useEffect(() => {
+      // Force the prompt to show for EVERY user after a 2-second delay
+      const timer = setTimeout(() => {
+         setShowPrompt(true);
+      }, 2000);
+
       const handler = (e: any) => {
          // Prevent the mini-infobar from appearing on mobile
          e.preventDefault();
          // Stash the event so it can be triggered later.
          setDeferredPrompt(e);
-         // Show our custom futuristic install prompt
          setShowPrompt(true);
       };
 
       window.addEventListener('beforeinstallprompt', handler);
 
       return () => {
+         clearTimeout(timer);
          window.removeEventListener('beforeinstallprompt', handler);
       };
    }, []);
 
    const handleInstall = async () => {
-      if (!deferredPrompt) return;
-      
-      // Show the install prompt
-      deferredPrompt.prompt();
-      
-      // Wait for the user to respond to the prompt
-      const { outcome } = await deferredPrompt.userChoice;
-      console.log(`User response to the install prompt: ${outcome}`);
-      
-      // We've used the prompt, and can't use it again, discard it
-      setDeferredPrompt(null);
+      if (deferredPrompt) {
+         // Show the native install prompt
+         deferredPrompt.prompt();
+         const { outcome } = await deferredPrompt.userChoice;
+         console.log(`User response to the install prompt: ${outcome}`);
+         setDeferredPrompt(null);
+      } else {
+         // Fallback if browser blocking native prompt or on iOS
+         alert("To install Chatrix:\n\n1. Tap the Share icon (iOS) or Menu icon (Android/Chrome)\n2. Select 'Add to Home Screen'");
+      }
       setShowPrompt(false);
    };
 
