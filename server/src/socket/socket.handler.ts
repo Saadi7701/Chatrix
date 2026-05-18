@@ -186,6 +186,30 @@ export const setupSocket = (io: Server) => {
       console.log(`[socket]: Incoming ${type} call from ${caller?.username} to ${to}`);
       if (userSocketMap[to]) {
         io.to(to).emit('incoming_call', { offer, from, type, username: caller?.username, profilePic: caller?.profilePic });
+      } else {
+        // Receiver is offline! Send Web Push Notification for Call!
+        try {
+          const receiver: any = await prisma.user.findUnique({
+            where: { id: to },
+            select: { pushSubscription: true, notificationsEnabled: true } as any
+          });
+
+          if (receiver?.notificationsEnabled && receiver.pushSubscription) {
+            const subscriptionObj = receiver.pushSubscription as any;
+            const payload = JSON.stringify({
+              title: `Incoming ${type === 'VIDEO' ? 'Video' : 'Voice'} Call`,
+              body: `${caller?.username || 'Someone'} is calling you on Chatrix.`,
+              icon: caller?.profilePic || 'https://api.dicebear.com/7.x/bottts-neutral/svg?seed=chatrix',
+              data: { url: '/chat' }
+            });
+
+            webpush.sendNotification(subscriptionObj, payload).catch((err) => {
+              console.error('[web-push]: Error sending call notification:', err.message);
+            });
+          }
+        } catch (pushErr) {
+          console.error('[web-push]: Failed to send call push:', pushErr);
+        }
       }
     });
 

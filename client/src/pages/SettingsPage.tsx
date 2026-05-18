@@ -41,7 +41,17 @@ const SettingsPage = () => {
          
          if (key === 'notificationsEnabled' && value === true) {
             if ("Notification" in window) {
-               Notification.requestPermission();
+               const permission = await Notification.requestPermission();
+               if (permission === 'granted') {
+                  // Dynamically import to avoid circular dependencies at top level if any
+                  import('../services/pushNotifications').then(({ registerPushNotifications }) => {
+                     registerPushNotifications(token);
+                  });
+               } else {
+                  alert('Notification permission denied by your browser. Please allow it in settings.');
+                  // Rollback UI toggle if permission denied
+                  updateSetting('notificationsEnabled', false);
+               }
             }
          }
       } catch (err) {
