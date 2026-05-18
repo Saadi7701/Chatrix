@@ -9,6 +9,7 @@ import SettingsPage from './pages/SettingsPage.tsx';
 import { useAuthStore } from './store/useAuthStore';
 import NotificationManager from './components/NotificationManager';
 import CallOverlay from './components/CallOverlay';
+import InstallPrompt from './components/InstallPrompt';
 
 import { connectSocket, disconnectSocket } from './services/socket';
 import { registerPushNotifications } from './services/pushNotifications';
@@ -48,6 +49,7 @@ function App() {
     <Router>
       <NotificationManager />
       <CallOverlay />
+      <InstallPrompt />
       {/* High-End CSS Background System */}
       <div className="cyber-bg fixed inset-0 z-0">
         <div className="ambient-glow-1" />

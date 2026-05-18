@@ -42,3 +42,8 @@ self.addEventListener('notificationclick', (event) => {
     })
   );
 });
+
+// Required to pass PWA installability criteria
+self.addEventListener('fetch', (event) => {
+  // We can just pass through to network for now.
+});
