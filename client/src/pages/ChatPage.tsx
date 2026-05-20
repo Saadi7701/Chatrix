@@ -166,6 +166,10 @@ const ChatPage = () => {
 
   useEffect(() => {
     if (!activeConversation || !token) return;
+    if (activeConversation.id === 'ai_bot') {
+      setMessages([{ id: 'ai-welcome', senderId: 'ai_bot', content: 'Greetings. I am AURA, your personal Neural AI Assistant. How may I assist you?', type: 'TEXT', status: 'SENT', createdAt: new Date().toISOString() }]);
+      return;
+    }
     const fetchMessages = async () => {
       try {
         const res = await axios.get(`${API_URL}/api/auth/messages/${activeConversation.id}`, {
@@ -179,6 +183,22 @@ const ChatPage = () => {
 
   const handleSendMessage = async () => {
     if (!inputText || !activeConversation) return;
+
+    if (activeConversation.id === 'ai_bot') {
+       const text = inputText;
+       setInputText('');
+       // Add user message to UI
+       const userMsg = { id: Date.now().toString(), senderId: user?.id, content: text, type: 'TEXT', status: 'SENT', createdAt: new Date().toISOString() };
+       setMessages([...messages, userMsg]);
+       
+       // Simulate AI Processing & Response
+       setTimeout(() => {
+          const aiMsg = { id: (Date.now() + 1).toString(), senderId: 'ai_bot', content: 'OpenRouter API Integration Pending. Please provide the API Key to enable neural responses.', type: 'TEXT', status: 'SENT', createdAt: new Date().toISOString() };
+          setMessages(prev => [...prev, aiMsg]);
+       }, 1000);
+       return;
+    }
+
     socket.emit('send_message', {
       receiverId: activeConversation.id,
       content: inputText,
@@ -329,6 +349,20 @@ const ChatPage = () => {
           </form>
 
           <div className="flex-1 overflow-y-auto custom-scrollbar">
+            {/* AI BOT ALWAYS VISIBLE */}
+            <ContactCard 
+               active={activeConversation?.id === 'ai_bot'} 
+               name="AURA AI" 
+               msg="AI_AGENT"
+               status="Online"
+               onClick={() => {
+                 setActiveConversation({ id: 'ai_bot', username: 'AURA AI', isOnline: true, userCode: 'AI_AGENT', profilePic: 'https://api.dicebear.com/7.x/bottts-neutral/svg?seed=AURA' });
+                 setSearchCode('');
+               }}
+               pic="https://api.dicebear.com/7.x/bottts-neutral/svg?seed=AURA"
+               lastMessage={{ type: 'TEXT', content: 'Neural link active.', createdAt: new Date().toISOString() }}
+            />
+
             {!isStealth ? (
               (() => {
                 const filtered = contacts.filter(c => 
