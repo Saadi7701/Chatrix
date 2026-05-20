@@ -451,7 +451,7 @@ const ChatPage = () => {
           {activeConversation ? (
             <>
               {/* Chat Header */}
-              <div className="p-4 px-6 md:px-8 border-b border-white/5 flex items-center justify-between bg-black/20 backdrop-blur-md z-10">
+              <div className="p-4 px-6 md:px-8 border-b border-white/5 flex items-center justify-between bg-black/20 backdrop-blur-md z-10 flex-shrink-0">
                 <div className="flex items-center gap-3 md:gap-4">
                   <button onClick={() => setActiveConversation(null)} className="md:hidden p-2 -ml-2 text-gray-400 hover:text-white transition-colors">
                     <ArrowLeft size={24} />
@@ -491,7 +491,7 @@ const ChatPage = () => {
               </div>
 
               {/* Messages Grid */}
-              <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 flex flex-col scroll-smooth custom-scrollbar relative">
+              <div className="flex-1 min-h-0 overflow-y-auto p-4 md:p-8 space-y-6 flex flex-col scroll-smooth custom-scrollbar relative">
                 <AnimatePresence>
                   {showProfile && (
                     <motion.div 
@@ -565,7 +565,7 @@ const ChatPage = () => {
               </div>
 
               {/* Chat Input */}
-              <div className="p-4 md:p-6 pt-0">
+              <div className="p-4 md:p-6 pt-0 flex-shrink-0">
                 <div className="bg-[#111b21] border border-white/10 rounded-[2rem] p-3 md:p-4 flex items-center gap-2 md:gap-3 shadow-2xl relative">
                   {isRecording && (
                     <div className="absolute inset-0 bg-[#111b21] rounded-[2rem] flex items-center justify-between px-6 md:px-8 z-20">
