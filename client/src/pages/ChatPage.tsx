@@ -194,7 +194,7 @@ const ChatPage = () => {
        // Real AI Processing via OpenRouter
        try {
           const res = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
-             model: 'google/gemma-7b-it:free',
+              model: 'meta-llama/llama-3.3-8b-instruct:free',
              messages: [
                 { role: 'system', content: 'You are AURA, an advanced, highly intelligent, and futuristic AI assistant built into the Chatrix platform. Respond in a concise, helpful, and slightly futuristic/cyberpunk tone.' },
                 { role: 'user', content: text }
