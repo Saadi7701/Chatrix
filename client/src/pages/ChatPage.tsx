@@ -191,11 +191,30 @@ const ChatPage = () => {
        const userMsg = { id: Date.now().toString(), senderId: user?.id, content: text, type: 'TEXT', status: 'SENT', createdAt: new Date().toISOString() };
        setMessages([...messages, userMsg]);
        
-       // Simulate AI Processing & Response
-       setTimeout(() => {
-          const aiMsg = { id: (Date.now() + 1).toString(), senderId: 'ai_bot', content: 'OpenRouter API Integration Pending. Please provide the API Key to enable neural responses.', type: 'TEXT', status: 'SENT', createdAt: new Date().toISOString() };
-          setMessages(prev => [...prev, aiMsg]);
-       }, 1000);
+       // Real AI Processing via OpenRouter
+       try {
+          const res = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
+             model: 'meta-llama/llama-3-8b-instruct:free',
+             messages: [
+                { role: 'system', content: 'You are AURA, an advanced, highly intelligent, and futuristic AI assistant built into the Chatrix platform. Respond in a concise, helpful, and slightly futuristic/cyberpunk tone.' },
+                { role: 'user', content: text }
+             ]
+          }, {
+             headers: {
+                'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
+                'HTTP-Referer': window.location.origin,
+                'X-Title': 'Chatrix Platform'
+             }
+          });
+          
+          const aiResponse = res.data.choices[0].message.content;
+          const aiMsg = { id: (Date.now() + 1).toString(), senderId: 'ai_bot', content: aiResponse, type: 'TEXT', status: 'SENT', createdAt: new Date().toISOString() };
+          addMessage(aiMsg);
+       } catch (err) {
+          console.error("OpenRouter API Error", err);
+          const errorMsg = { id: (Date.now() + 1).toString(), senderId: 'ai_bot', content: '⚠️ Neural link disruption. Failed to connect to OpenRouter cognitive core. Please verify API key.', type: 'TEXT', status: 'SENT', createdAt: new Date().toISOString() };
+          addMessage(errorMsg);
+       }
        return;
     }
 
