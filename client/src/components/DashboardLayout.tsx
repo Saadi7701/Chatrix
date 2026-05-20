@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   MessageSquare, Users, Phone, Settings, 
-  LogOut, Zap, Info, Menu, X
+  LogOut, Zap
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
@@ -11,7 +11,6 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout, user } = useAuthStore();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const menuItems = [
     { icon: <MessageSquare size={24} />, label: 'Chats', path: '/chat' },
