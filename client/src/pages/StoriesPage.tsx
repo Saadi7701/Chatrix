@@ -136,9 +136,9 @@ const StoriesPage = () => {
           </div>
         </div>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 md:gap-8">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3 md:gap-8">
            {stories.length === 0 && (
-             <div className="aspect-[9/16] rounded-3xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center text-gray-700 p-8 text-center">
+             <div className="col-span-3 sm:col-span-4 md:col-span-5 lg:col-span-6 xl:col-span-7 aspect-[21/9] rounded-3xl border-2 border-dashed border-white/10 flex flex-col items-center justify-center text-gray-700 p-8 text-center">
                 <ImageIcon className="w-8 h-8 mb-4 opacity-20" />
                 <p className="text-[10px] font-black tracking-widest uppercase leading-relaxed">No Active Neural Pulses in your Sector</p>
              </div>
@@ -158,12 +158,12 @@ const StoriesPage = () => {
                         <img src={story.mediaUrl} className="w-full h-full object-cover group-hover:scale-110 transition-all duration-1000" alt="story" />
                       )}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-60" />
-                      <div className="absolute bottom-6 left-6 right-6">
-                         <div className="w-10 h-10 rounded-full border-2 border-cyan-400 p-0.5 mb-3 shadow-[0_0_15px_rgba(0,242,255,0.4)]">
+                      <div className="absolute bottom-3 left-3 right-3 md:bottom-6 md:left-6 md:right-6">
+                         <div className="w-6 h-6 md:w-10 md:h-10 rounded-full border-2 border-cyan-400 p-0.5 mb-2 md:mb-3 shadow-[0_0_15px_rgba(0,242,255,0.4)]">
                             <img src={story.user.profilePic || `https://api.dicebear.com/7.x/bottts-neutral/svg?seed=${story.user.username}`} className="w-full h-full rounded-full" alt="avatar" />
                          </div>
-                         <p className="text-xs font-black text-white tracking-widest uppercase truncate">{story.user.username}</p>
-                         <p className="text-[8px] font-bold text-cyan-400/50 tracking-widest uppercase">NODE ACTIVE</p>
+                         <p className="text-[9px] md:text-xs font-black text-white tracking-widest uppercase truncate">{story.user.username}</p>
+                         <p className="text-[6px] md:text-[8px] font-bold text-cyan-400/50 tracking-widest uppercase hidden md:block">NODE ACTIVE</p>
                       </div>
                    </div>
                 </div>
