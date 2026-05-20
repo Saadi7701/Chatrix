@@ -167,7 +167,12 @@ const ChatPage = () => {
   useEffect(() => {
     if (!activeConversation || !token) return;
     if (activeConversation.id === 'ai_bot') {
-      setMessages([{ id: 'ai-welcome', senderId: 'ai_bot', content: 'Greetings. I am AURA, your personal Neural AI Assistant. How may I assist you?', type: 'TEXT', status: 'SENT', createdAt: new Date().toISOString() }]);
+      const savedHistory = localStorage.getItem(`aura_ai_history_${user?.id}`);
+      if (savedHistory) {
+         setMessages(JSON.parse(savedHistory));
+      } else {
+         setMessages([{ id: 'ai-welcome', senderId: 'ai_bot', content: 'Greetings. I am AURA, your personal Neural AI Assistant. How may I assist you?', type: 'TEXT', status: 'SENT', createdAt: new Date().toISOString() }]);
+      }
       return;
     }
     const fetchMessages = async () => {
@@ -180,6 +185,13 @@ const ChatPage = () => {
     };
     fetchMessages();
   }, [activeConversation, token]);
+
+  // Persist AI Chat History
+  useEffect(() => {
+    if (activeConversation?.id === 'ai_bot' && messages.length > 0) {
+       localStorage.setItem(`aura_ai_history_${user?.id}`, JSON.stringify(messages));
+    }
+  }, [messages, activeConversation, user?.id]);
 
   const handleSendMessage = async () => {
     if (!inputText || !activeConversation) return;
