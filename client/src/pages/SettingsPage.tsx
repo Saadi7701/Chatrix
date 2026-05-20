@@ -61,7 +61,7 @@ const SettingsPage = () => {
 
    return (
       <DashboardLayout>
-         <div className="flex-1 flex flex-col p-6 md:p-12 bg-[#050505]">
+         <div className="flex-1 flex flex-col p-6 md:p-12 bg-[#050505] overflow-y-auto pb-28 md:pb-12">
             <div className="mb-10 md:mb-16">
                <h1 className="text-4xl md:text-6xl font-black text-white tracking-tighter mb-2">Settings</h1>
                <p className="text-[10px] font-black tracking-[0.4em] text-violet-400 uppercase">Your Chatrix Identity V.9</p>

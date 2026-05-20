@@ -104,6 +104,17 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
             </button>
           );
         })}
+        {/* Mobile Sign Out Button */}
+        <button
+          onClick={() => {
+            if (user?.id) emitLogout(user.id);
+            logout();
+          }}
+          className="flex flex-col items-center justify-center flex-1 h-full gap-1 transition-all text-gray-500 hover:text-red-500 active:text-red-400"
+        >
+          <LogOut size={24} />
+          <span className="text-[10px] font-bold tracking-widest uppercase">Logout</span>
+        </button>
       </div>
     </div>
   );
