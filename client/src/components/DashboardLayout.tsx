@@ -5,12 +5,14 @@ import {
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
+import { useChatStore } from '../store/useChatStore';
 import { emitLogout } from '../services/socket';
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { logout, user } = useAuthStore();
+  const { activeConversation } = useChatStore();
 
   const menuItems = [
     { icon: <MessageSquare size={24} />, label: 'Chats', path: '/chat' },
@@ -76,12 +78,12 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
       </div>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0 relative bg-[#050505] overflow-y-auto custom-scrollbar mb-20 md:mb-0">
+      <main className={`flex-1 flex flex-col min-w-0 relative bg-[#050505] overflow-hidden ${activeConversation && location.pathname === '/chat' ? 'mb-0' : 'mb-20 md:mb-0'}`}>
         {children}
       </main>
 
-      {/* Mobile Bottom Navigation Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-[#0a0a14]/90 backdrop-blur-xl border-t border-white/5 z-50 flex items-center justify-around px-2 pb-safe">
+      {/* Mobile Bottom Navigation Bar (Hidden when actively chatting) */}
+      <div className={`md:hidden fixed bottom-0 left-0 right-0 h-20 bg-[#0a0a14]/90 backdrop-blur-xl border-t border-white/5 z-50 flex items-center justify-around px-2 pb-safe transition-all duration-300 ${activeConversation && location.pathname === '/chat' ? 'translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'}`}>
         {menuItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (
