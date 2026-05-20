@@ -56,7 +56,7 @@ function App() {
         <div className="ambient-glow-2" />
       </div>
 
-      <div className="relative z-10 min-h-screen">
+      <div className="relative z-10 h-[100dvh] overflow-hidden flex flex-col">
         <Routes>
           <Route path="/" element={token ? <Navigate to="/chat" /> : <LandingPage />} />
           <Route path="/auth" element={token ? <Navigate to="/chat" /> : <AuthPage />} />

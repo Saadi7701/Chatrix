@@ -13,10 +13,17 @@
   --glass-border: rgba(255, 255, 255, 0.05);
 }
 
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden; /* Force mobile browsers to never scroll the body */
+}
+
 body {
   background-color: var(--bg-main);
   color: var(--text-main);
-  overflow-x: hidden;
   font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
   background-image: 
     radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.05) 0px, transparent 50%),
