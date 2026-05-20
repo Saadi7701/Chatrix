@@ -7,7 +7,7 @@ import {
 
 const LandingPage = () => {
   return (
-    <div className="relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden bg-[#050505]">
+    <div className="relative min-h-screen w-full flex flex-col items-center justify-center overflow-y-auto bg-[#050505] pb-20">
       {/* Cinematic Ambient Glows */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-violet-500/10 rounded-full blur-[120px] animate-pulse" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-fuchsia-500/10 rounded-full blur-[120px] animate-pulse" />
