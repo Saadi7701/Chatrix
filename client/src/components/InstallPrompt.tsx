@@ -7,9 +7,13 @@ export const InstallPrompt = () => {
    const [showPrompt, setShowPrompt] = useState(false);
 
    useEffect(() => {
-      // Force the prompt to show for EVERY user after a 2-second delay
+      // Force the prompt to show for EVERY user after a 2-second delay, UNLESS they are already in the installed App
       const timer = setTimeout(() => {
-         setShowPrompt(true);
+         // Check if the app is running in standalone mode (already installed PWA)
+         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone;
+         if (!isStandalone) {
+            setShowPrompt(true);
+         }
       }, 2000);
 
       const handler = (e: any) => {
