@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="ChatrixDesktop.MainPage"
+             BackgroundColor="#050505">
+
+    <Grid>
+        <!-- Full-window browser view -->
+        <WebView x:Name="ChatrixWebView"
+                 HorizontalOptions="FillAndExpand"
+                 VerticalOptions="FillAndExpand"
+                 Navigating="OnWebViewNavigating"
+                 Navigated="OnWebViewNavigated"/>
+
+        <!-- Custom Offline Warning Overlay -->
+        <Grid x:Name="OfflineOverlay"
+              BackgroundColor="#050505"
+              IsVisible="False">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Offline Dialog -->
+            <Border Grid.Row="1" Grid.Column="1"
+                    BackgroundColor="#0c0c14"
+                    Stroke="#221a30"
+                    StrokeThickness="1"
+                    StrokeShape="RoundRectangle 24"
+                    WidthRequest="420"
+                    Padding="32"
+                    VerticalOptions="Center"
+                    HorizontalOptions="Center">
+                <Border.Shadow>
+                    <Shadow Brush="#8b5cf6" Offset="0,0" Radius="25" Opacity="0.15" />
+                </Border.Shadow>
+
+                <VerticalStackLayout Spacing="24" HorizontalOptions="Center">
+                    <!-- Tech Accent Icon -->
+                    <Border BackgroundColor="#151525"
+                            Stroke="#3c2f54"
+                            StrokeThickness="1"
+                            StrokeShape="RoundRectangle 16"
+                            WidthRequest="64"
+                            HeightRequest="64"
+                            HorizontalOptions="Center">
+                        <Label Text="⚠" 
+                               TextColor="#8b5cf6" 
+                               FontSize="32" 
+                               HorizontalOptions="Center" 
+                               VerticalOptions="Center" />
+                    </Border>
+
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="CONNECTION LOST"
+                               TextColor="White"
+                               FontSize="20"
+                               FontAttributes="Bold"
+                               HorizontalOptions="Center"
+                               CharacterSpacing="2"/>
+                        <Label Text="Chatrix requires a secure network connection to synchronize your neural sync channels."
+                               TextColor="#8e8e9f"
+                               FontSize="12"
+                               LineHeight="1.4"
+                               HorizontalOptions="Center"
+                               HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+
+                    <!-- Custom Reconnect Button -->
+                    <Button Text="RETRY SYNC"
+                            Clicked="OnRetryClicked"
+                            BackgroundColor="#8b5cf6"
+                            TextColor="White"
+                            FontAttributes="Bold"
+                            CornerRadius="12"
+                            HeightRequest="50"
+                            Padding="24,0"
+                            CharacterSpacing="1"
+                            HorizontalOptions="Fill" />
+                </VerticalStackLayout>
+            </Border>
+        </Grid>
+    </Grid>
+
+</ContentPage>
