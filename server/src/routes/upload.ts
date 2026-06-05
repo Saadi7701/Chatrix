@@ -16,7 +16,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 // Helper to upload buffer to Cloudinary
 const uploadToCloudinary = (buffer: Buffer, mimetype: string): Promise<string> => {
   return new Promise((resolve, reject) => {
-    const resourceType = mimetype.startsWith('video') ? 'video' : mimetype.startsWith('audio') ? 'video' : 'image';
+    const resourceType = mimetype.startsWith('video') ? 'video' : mimetype.startsWith('audio') ? 'video' : mimetype.startsWith('image') ? 'image' : 'raw';
     const uploadStream = cloudinary.uploader.upload_stream(
       { resource_type: resourceType as any, folder: 'chatrix' },
       (error, result) => {
