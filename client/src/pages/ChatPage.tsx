@@ -568,7 +568,7 @@ const ChatPage = () => {
                     status={msg.status}
                     fileName={msg.fileName}
                   />
-                )))
+                ))}
                 <div ref={scrollRef} />
               </div>
 
