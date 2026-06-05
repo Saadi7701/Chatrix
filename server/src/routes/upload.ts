@@ -4,16 +4,32 @@ import { v2 as cloudinary } from 'cloudinary';
 import { authMiddleware } from '../middleware/auth.middleware';
 import prisma from '../config/prisma';
 import { Readable } from 'stream';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import crypto from 'crypto';
 
 const router = Router();
 
-// Configure Cloudinary
+// Configure Cloudinary for Media (Images/Video/Audio)
 cloudinary.config({ cloudinary_url: process.env.CLOUDINARY_URL });
 
-// Use memory storage (no disk - works on Railway)
+// Configure AWS S3 for Documents (PDF/Doc/PPT)
+// If you use Cloudflare R2, the endpoint would look like https://<ACCOUNT_ID>.r2.cloudflarestorage.com
+const s3 = new S3Client({
+  region: process.env.AWS_REGION || 'us-east-1',
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+  },
+  endpoint: process.env.AWS_ENDPOINT_URL || undefined, // Required for R2
+});
+
+const BUCKET_NAME = process.env.AWS_S3_BUCKET || 'chatrix-docs';
+
+// Use memory storage
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Helper to upload buffer to Cloudinary
+// --- CLOUDINARY UPLOAD HELPER ---
 const uploadToCloudinary = (buffer: Buffer, mimetype: string, originalName?: string): Promise<{ url: string; publicId: string }> => {
   return new Promise((resolve, reject) => {
     const resourceType = mimetype.startsWith('video') ? 'video' : mimetype.startsWith('audio') ? 'video' : mimetype.startsWith('image') ? 'image' : 'raw';
@@ -21,13 +37,10 @@ const uploadToCloudinary = (buffer: Buffer, mimetype: string, originalName?: str
     const options: any = {
       resource_type: resourceType,
       folder: 'chatrix',
-      access_mode: 'public', // Prevent 401 errors on raw files
+      access_mode: 'public',
     };
 
-    // For raw/document uploads, preserve the original filename so the
-    // download URL keeps the correct extension (.pdf, .docx, etc.)
     if (resourceType === 'raw' && originalName) {
-      // Strip extension from public_id to avoid double-extension issues
       const nameWithoutExt = originalName.replace(/\.[^.]+$/, '');
       options.use_filename = true;
       options.unique_filename = true;
@@ -51,7 +64,26 @@ const uploadToCloudinary = (buffer: Buffer, mimetype: string, originalName?: str
   });
 };
 
-// Profile Picture Upload
+// --- S3 UPLOAD HELPER ---
+const uploadToS3 = async (buffer: Buffer, mimetype: string, originalName: string): Promise<{ key: string }> => {
+  const fileExtension = originalName.split('.').pop();
+  // Generate a unique safe filename
+  const safeName = crypto.randomBytes(16).toString('hex');
+  const key = `documents/${safeName}.${fileExtension}`;
+
+  const command = new PutObjectCommand({
+    Bucket: BUCKET_NAME,
+    Key: key,
+    Body: buffer,
+    ContentType: mimetype,
+    ContentDisposition: `attachment; filename="${originalName}"`
+  });
+
+  await s3.send(command);
+  return { key };
+};
+
+// Profile Picture Upload (Cloudinary)
 router.post('/profile', authMiddleware, upload.single('image'), async (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
   const userId = (req as any).userId;
@@ -69,12 +101,11 @@ router.post('/profile', authMiddleware, upload.single('image'), async (req, res)
   }
 });
 
-// Chat Media Upload (images, audio/voice notes, videos, documents)
+// Chat Media Upload
 router.post('/chat', authMiddleware, upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
 
   try {
-    const { url: fileUrl } = await uploadToCloudinary(req.file.buffer, req.file.mimetype, req.file.originalname);
     const type = req.file.mimetype.startsWith('image')
       ? 'IMAGE'
       : req.file.mimetype.startsWith('audio')
@@ -83,10 +114,17 @@ router.post('/chat', authMiddleware, upload.single('file'), async (req, res) => 
       ? 'VIDEO'
       : 'DOCUMENT';
 
-    // For documents (raw files), generate a signed URL so it doesn't 401
-    let deliveryUrl = fileUrl;
+    let deliveryUrl = '';
+
     if (type === 'DOCUMENT') {
-      deliveryUrl = generateSignedRawUrl(fileUrl);
+      // 1. Upload to S3/R2 for raw files
+      const { key } = await uploadToS3(req.file.buffer, req.file.mimetype, req.file.originalname);
+      // We store a custom URL format for S3 files: s3://key
+      deliveryUrl = `s3://${key}`;
+    } else {
+      // 2. Upload to Cloudinary for media
+      const { url: fileUrl } = await uploadToCloudinary(req.file.buffer, req.file.mimetype, req.file.originalname);
+      deliveryUrl = fileUrl;
     }
 
     res.status(200).json({
@@ -101,8 +139,7 @@ router.post('/chat', authMiddleware, upload.single('file'), async (req, res) => 
   }
 });
 
-// Download endpoint: generates a signed URL for any Cloudinary raw file
-// This handles existing files that were uploaded before the fix
+// Download endpoint: generates signed URLs for S3 or Cloudinary
 router.get('/download', async (req, res) => {
   const { url } = req.query;
   if (!url || typeof url !== 'string') {
@@ -110,6 +147,19 @@ router.get('/download', async (req, res) => {
   }
 
   try {
+    // Check if it's an S3 object (our new format)
+    if (url.startsWith('s3://')) {
+      const key = url.replace('s3://', '');
+      const command = new GetObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: key,
+      });
+      // Generate a presigned URL that expires in 15 minutes (900 seconds)
+      const signedUrl = await getSignedUrl(s3, command, { expiresIn: 900 });
+      return res.redirect(signedUrl);
+    }
+
+    // Fallback for legacy Cloudinary raw files
     const signedUrl = generateSignedRawUrl(url);
     res.redirect(signedUrl);
   } catch (error) {
@@ -119,27 +169,20 @@ router.get('/download', async (req, res) => {
 });
 
 /**
- * Takes a Cloudinary raw URL and returns a signed version that bypasses 401.
- * Example input:  https://res.cloudinary.com/xxx/raw/upload/v123/chatrix/file.pdf
- * Example output: https://res.cloudinary.com/xxx/raw/upload/s--SIGNATURE--/fl_attachment/v123/chatrix/file.pdf
+ * Fallback for legacy Cloudinary raw URLs
  */
 function generateSignedRawUrl(rawUrl: string): string {
   try {
-    // Extract public_id from the Cloudinary URL
-    // Pattern: .../raw/upload/v<number>/<public_id>
     const match = rawUrl.match(/\/raw\/upload\/v\d+\/(.+)$/);
     if (!match) return rawUrl;
 
-    const publicId = match[1]; // e.g. "chatrix/thermodynamics__laws.pdf"
-
-    const signedUrl = cloudinary.url(publicId, {
+    const publicId = match[1];
+    return cloudinary.url(publicId, {
       resource_type: 'raw',
       sign_url: true,
       type: 'authenticated',
       secure: true,
     });
-
-    return signedUrl;
   } catch {
     return rawUrl;
   }
