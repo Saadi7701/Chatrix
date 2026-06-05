@@ -103,7 +103,7 @@ router.post('/chat', authMiddleware, upload.single('file'), async (req, res) => 
 
 // Download endpoint: generates a signed URL for any Cloudinary raw file
 // This handles existing files that were uploaded before the fix
-router.get('/download', authMiddleware, async (req, res) => {
+router.get('/download', async (req, res) => {
   const { url } = req.query;
   if (!url || typeof url !== 'string') {
     return res.status(400).json({ message: 'Missing url parameter' });
