@@ -156,6 +156,25 @@ export const setupSocket = (io: Server) => {
       io.to(senderId).emit('receive_message', message);
     });
 
+    // Delete Message
+    socket.on('delete_message', async ({ messageId, receiverId }) => {
+      try {
+        await prisma.message.delete({
+          where: { id: messageId }
+        });
+        
+        // Notify receiver
+        if (userSocketMap[receiverId]) {
+          io.to(receiverId).emit('message_deleted', { messageId });
+        }
+        
+        // Let the sender know it was successfully deleted
+        socket.emit('message_deleted', { messageId });
+      } catch (err) {
+        console.error('[socket]: Error deleting message', err);
+      }
+    });
+
     // Mark as Read
     socket.on('mark_as_read', async ({ messageId, senderId, receiverId }) => {
       // Find the user who is marking as read (the receiver of the message)

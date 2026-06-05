@@ -20,7 +20,7 @@ const ChatPage = () => {
   const { 
     messages, addMessage, setMessages, 
     activeConversation, setActiveConversation,
-    updateMessageStatus, updateUserStatus 
+    updateMessageStatus, updateUserStatus, removeMessage 
   } = useChatStore();
   
   const [searchCode, setSearchCode] = useState('');
@@ -111,10 +111,15 @@ const ChatPage = () => {
       setTimeout(() => setSystemMsg(''), 5000);
     };
 
+    const handleMessageDeleted = ({ messageId }: any) => {
+      removeMessage(messageId);
+    };
+
     socket.on('receive_message', handleReceiveMessage);
     socket.on('message_read', handleMessageRead);
     socket.on('message_delivered', handleMessageDelivered);
     socket.on('user_status_change', handleUserStatusChange);
+    socket.on('message_deleted', handleMessageDeleted);
     socket.on('error', handleError);
 
     return () => {
@@ -122,6 +127,7 @@ const ChatPage = () => {
       socket.off('message_read', handleMessageRead);
       socket.off('message_delivered', handleMessageDelivered);
       socket.off('user_status_change', handleUserStatusChange);
+      socket.off('message_deleted', handleMessageDeleted);
       socket.off('error', handleError);
     };
   }, [token, user]);
@@ -142,6 +148,12 @@ const ChatPage = () => {
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  const handleDeleteMessage = (messageId: string) => {
+    if (!activeConversation) return;
+    socket.emit('delete_message', { messageId, receiverId: activeConversation.id });
+    removeMessage(messageId);
+  };
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -567,6 +579,7 @@ const ChatPage = () => {
                     time={new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     status={msg.status}
                     fileName={msg.fileName}
+                    onDelete={() => handleDeleteMessage(msg.id)}
                   />
                 ))}
                 <div ref={scrollRef} />
@@ -680,7 +693,7 @@ const ContactCard = ({ name, msg, status, active, onClick, pic, lastMessage }: a
   );
 };
 
-const MessageBubble = ({ text, time, own, type, status, fileName }: any) => {
+const MessageBubble = ({ text, time, own, type, status, fileName, onDelete }: any) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -714,7 +727,7 @@ const MessageBubble = ({ text, time, own, type, status, fileName }: any) => {
   };
 
   return (
-    <div className={`flex ${own ? 'justify-end' : 'justify-start'}`}>
+    <div className={`flex ${own ? 'justify-end' : 'justify-start'} group/message`}>
       <div className={`
         max-w-[85%] md:max-w-[75%] lg:max-w-[70%] p-4 md:p-5 rounded-[1.5rem] md:rounded-[2rem]
         ${own ? 'bubble-out' : 'bubble-in'}
@@ -766,6 +779,13 @@ const MessageBubble = ({ text, time, own, type, status, fileName }: any) => {
               {status === 'SEEN' && (
                 <CheckCheck className="w-3 h-3 md:w-3.5 md:h-3.5 text-violet-400 shadow-[0_0_10px_#8b5cf6]" />
               )}
+              <button 
+                onClick={onDelete} 
+                className="ml-2 opacity-0 group-hover/message:opacity-100 text-red-500 hover:text-red-400 transition-opacity"
+                title="Delete Message"
+              >
+                <Trash2 className="w-3 h-3 md:w-3.5 md:h-3.5" />
+              </button>
             </div>
           )}
         </div>

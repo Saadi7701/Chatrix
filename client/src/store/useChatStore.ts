@@ -6,6 +6,7 @@ interface ChatState {
   activeConversation: any | null;
   addMessage: (message: any) => void;
   setMessages: (messages: any[]) => void;
+  removeMessage: (messageId: string) => void;
   updateMessageStatus: (messageId: string, status: string) => void;
   setConversations: (conversations: any[]) => void;
   setActiveConversation: (conversation: any) => void;
@@ -20,6 +21,9 @@ export const useChatStore = create<ChatState>((set) => ({
     messages: state.messages.find(m => m.id === message.id) ? state.messages : [...state.messages, message] 
   })),
   setMessages: (messages) => set({ messages }),
+  removeMessage: (messageId) => set((state) => ({
+    messages: state.messages.filter(m => m.id !== messageId)
+  })),
   updateMessageStatus: (messageId, status) => set((state) => ({
     messages: state.messages.map(m => m.id === messageId ? { ...m, status } : m)
   })),
