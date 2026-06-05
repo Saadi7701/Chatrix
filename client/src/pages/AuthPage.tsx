@@ -82,7 +82,7 @@ const AuthPage = () => {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md z-10"
       >
-        <div className="bg-[#0b141a]/80 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] p-10 shadow-2xl relative">
+        <div className="bg-[#0b141a]/80 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] p-6 sm:p-10 shadow-2xl relative">
           <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-24 h-24 bg-gradient-to-br from-violet-400 to-fuchsia-600 rounded-3xl flex items-center justify-center shadow-[0_0_50px_rgba(139,92,246,0.3)] border-4 border-[#0a0a14]">
              <Zap className="w-12 h-12 text-white" />
           </div>
@@ -142,7 +142,7 @@ const AuthPage = () => {
 
                   <div className="pt-4">
                     <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4">6-Digit Neural Access Code</p>
-                    <div className="flex gap-2 justify-between">
+                    <div className="flex gap-1.5 sm:gap-2 justify-between">
                       {code.map((digit, i) => (
                         <input
                           key={i}
@@ -151,7 +151,7 @@ const AuthPage = () => {
                           maxLength={1}
                           value={digit}
                           onChange={(e) => handleCodeChange(i, e.target.value)}
-                          className="w-12 h-14 bg-white/5 border border-white/10 rounded-xl text-center text-xl font-bold focus:border-cyan-400 outline-none transition-all"
+                          className="flex-1 min-w-0 h-12 sm:h-14 bg-white/5 border border-white/10 rounded-xl text-center text-lg sm:text-xl font-bold focus:border-cyan-400 outline-none transition-all"
                         />
                       ))}
                     </div>
