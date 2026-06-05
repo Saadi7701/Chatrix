@@ -7,7 +7,7 @@ import {
 
 const LandingPage = () => {
   return (
-    <div className="relative min-h-screen w-full flex flex-col items-center justify-center overflow-y-auto bg-[#050505] pb-20">
+    <div className="relative min-h-[100dvh] w-full flex flex-col items-center bg-[#050505] overflow-x-hidden">
       {/* Cinematic Ambient Glows */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-violet-500/10 rounded-full blur-[120px] animate-pulse" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-fuchsia-500/10 rounded-full blur-[120px] animate-pulse" />
@@ -17,7 +17,7 @@ const LandingPage = () => {
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 1, ease: "easeOut" }}
-        className="relative z-10 w-full max-w-7xl px-6 py-12 flex flex-col items-center"
+        className="relative z-10 w-full max-w-7xl px-6 py-16 md:py-24 flex flex-col items-center flex-1 justify-center"
       >
         {/* Top Header Label */}
         <motion.div
@@ -91,13 +91,13 @@ const LandingPage = () => {
       </motion.div>
 
       {/* Footer System Stats */}
-      <div className="absolute bottom-10 w-full px-12 flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] font-bold text-gray-600 tracking-widest uppercase">
-        <div className="flex gap-8">
+      <div className="w-full px-6 md:px-12 py-8 mt-auto flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] font-bold text-gray-600 tracking-widest uppercase z-10 border-t border-white/5 bg-[#050505]/50 backdrop-blur-md">
+        <div className="flex flex-wrap justify-center gap-4 md:gap-8">
           <span>Uptime: 99.99%</span>
           <span>Latency: 2ms</span>
           <span>Users: 1.2M</span>
         </div>
-        <div>Aura Protocol © 2026 • Secure Neural Network</div>
+        <div className="text-center">Aura Protocol © 2026 • Secure Neural Network</div>
       </div>
     </div>
   );
