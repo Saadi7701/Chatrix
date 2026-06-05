@@ -85,7 +85,7 @@ export const setupSocket = (io: Server) => {
 
       // Handle messages
       socket.on('send_message', async (data) => {
-        const { receiverId, content, senderId, type = 'TEXT' } = data;
+        const { receiverId, content, senderId, type = 'TEXT', fileName, fileUrl, fileSize } = data;
         
         const receiverIsOnline = userSocketMap[receiverId] ? true : false;
   
@@ -96,7 +96,10 @@ export const setupSocket = (io: Server) => {
           senderId,
           receiverId,
           type: type as any,
-          status: receiverIsOnline ? 'DELIVERED' : 'SENT'
+          status: receiverIsOnline ? 'DELIVERED' : 'SENT',
+          ...(fileName && { fileName }),
+          ...(fileUrl && { fileUrl }),
+          ...(fileSize && { fileSize }),
         },
         include: {
           sender: {

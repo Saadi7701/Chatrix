@@ -340,11 +340,18 @@ const ChatPage = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       
+      const msgType = res.data.type.toUpperCase() === 'VOICE' ? 'AUDIO' : res.data.type.toUpperCase();
+      
       socket.emit('send_message', {
         receiverId: activeConversation.id,
         content: res.data.url,
         senderId: user?.id,
-        type: res.data.type.toUpperCase() === 'VOICE' ? 'AUDIO' : res.data.type.toUpperCase()
+        type: msgType,
+        ...(msgType === 'DOCUMENT' && {
+          fileName: res.data.fileName,
+          fileUrl: res.data.url,
+          fileSize: res.data.fileSize
+        })
       });
     } catch (err) { console.error('Upload failed', err); }
   };
@@ -559,8 +566,9 @@ const ChatPage = () => {
                     type={msg.type}
                     time={new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     status={msg.status}
+                    fileName={msg.fileName}
                   />
-                ))}
+                )))
                 <div ref={scrollRef} />
               </div>
 
@@ -672,7 +680,7 @@ const ContactCard = ({ name, msg, status, active, onClick, pic, lastMessage }: a
   );
 };
 
-const MessageBubble = ({ text, time, own, type, status }: any) => {
+const MessageBubble = ({ text, time, own, type, status, fileName }: any) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -684,6 +692,34 @@ const MessageBubble = ({ text, time, own, type, status }: any) => {
       audioRef.current.play();
     }
     setIsPlaying(!isPlaying);
+  };
+
+  // Build a proper download URL for Cloudinary raw files
+  const getDocDownloadUrl = (url: string, name?: string) => {
+    if (!url) return url;
+    // Insert fl_attachment into Cloudinary URL so browser downloads
+    // instead of trying to render the raw bytes
+    try {
+      const attachmentFlag = name
+        ? `fl_attachment:${encodeURIComponent(name.replace(/\.[^.]+$/, ''))}`
+        : 'fl_attachment';
+      // Cloudinary raw URL pattern: .../raw/upload/v123/folder/file
+      return url.replace('/upload/', `/upload/${attachmentFlag}/`);
+    } catch {
+      return url;
+    }
+  };
+
+  const getFileIcon = (name?: string) => {
+    if (!name) return '📁';
+    const ext = name.split('.').pop()?.toLowerCase();
+    if (ext === 'pdf') return '📄';
+    if (['doc', 'docx'].includes(ext || '')) return '📝';
+    if (['ppt', 'pptx'].includes(ext || '')) return '📊';
+    if (['xls', 'xlsx'].includes(ext || '')) return '📈';
+    if (['zip', 'rar', '7z'].includes(ext || '')) return '🗜️';
+    if (['txt', 'csv'].includes(ext || '')) return '📃';
+    return '📁';
   };
 
   return (
@@ -711,9 +747,23 @@ const MessageBubble = ({ text, time, own, type, status }: any) => {
           </div>
         )}
         {type === 'DOCUMENT' && (
-          <a href={text} target="_blank" rel="noreferrer" className="flex items-center gap-3 p-3 md:p-4 bg-white/5 rounded-xl md:rounded-2xl mb-2 hover:bg-white/10 transition-all border border-white/5">
-            <Paperclip className="w-4 h-4 md:w-5 md:h-5 text-cyan-400" />
-            <span className="text-[8px] md:text-[9px] font-black text-white uppercase tracking-widest truncate">Download Data Packet</span>
+          <a
+            href={getDocDownloadUrl(text, fileName)}
+            download={fileName || true}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-3 p-3 md:p-4 bg-white/5 rounded-xl md:rounded-2xl mb-2 hover:bg-white/10 transition-all border border-white/5 group"
+          >
+            <span className="text-2xl flex-shrink-0">{getFileIcon(fileName)}</span>
+            <div className="flex-1 min-w-0">
+              <span className="text-[10px] md:text-xs font-bold text-white truncate block">
+                {fileName || 'Download File'}
+              </span>
+              <span className="text-[7px] md:text-[8px] font-black text-cyan-400/60 uppercase tracking-widest">
+                Tap to download
+              </span>
+            </div>
+            <Paperclip className="w-4 h-4 md:w-5 md:h-5 text-cyan-400 group-hover:text-cyan-300 transition-colors flex-shrink-0" />
           </a>
         )}
         <div className="flex items-center justify-end gap-1.5 md:gap-2 text-[7px] md:text-[8px] font-black tracking-widest text-gray-500 uppercase">
