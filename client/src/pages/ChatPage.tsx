@@ -694,20 +694,11 @@ const MessageBubble = ({ text, time, own, type, status, fileName }: any) => {
     setIsPlaying(!isPlaying);
   };
 
-  // Build a proper download URL for Cloudinary raw files
-  const getDocDownloadUrl = (url: string, name?: string) => {
+  // Route document downloads through the server which generates signed URLs
+  // This fixes Cloudinary 401 errors on raw files
+  const getDocDownloadUrl = (url: string) => {
     if (!url) return url;
-    // Insert fl_attachment into Cloudinary URL so browser downloads
-    // instead of trying to render the raw bytes
-    try {
-      const attachmentFlag = name
-        ? `fl_attachment:${encodeURIComponent(name.replace(/\.[^.]+$/, ''))}`
-        : 'fl_attachment';
-      // Cloudinary raw URL pattern: .../raw/upload/v123/folder/file
-      return url.replace('/upload/', `/upload/${attachmentFlag}/`);
-    } catch {
-      return url;
-    }
+    return `${API_URL}/api/upload/download?url=${encodeURIComponent(url)}`;
   };
 
   const getFileIcon = (name?: string) => {
@@ -748,7 +739,7 @@ const MessageBubble = ({ text, time, own, type, status, fileName }: any) => {
         )}
         {type === 'DOCUMENT' && (
           <a
-            href={getDocDownloadUrl(text, fileName)}
+            href={getDocDownloadUrl(text)}
             download={fileName || true}
             target="_blank"
             rel="noreferrer"
